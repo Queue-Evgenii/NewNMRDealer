@@ -1,0 +1,22 @@
+[
+    {
+        "id_statzak":  1,
+        "StatusZak":  "new"
+    },
+    {
+        "id_statzak":  2,
+        "StatusZak":  "constructed"
+    },
+    {
+        "id_statzak":  3,
+        "StatusZak":  "in production"
+    },
+    {
+        "id_statzak":  4,
+        "StatusZak":  "produced"
+    },
+    {
+        "id_statzak":  5,
+        "StatusZak":  "shiped"
+    }
+]

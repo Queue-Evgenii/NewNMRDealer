@@ -1,0 +1,42 @@
+[
+    {
+        "id_index":  1,
+        "id_sclad":  1,
+        "namesclad":  "Склад",
+        "status":  0,
+        "canupdate":  0,
+        "id_client":  5
+    },
+    {
+        "id_index":  3,
+        "id_sclad":  2,
+        "namesclad":  "Склад2",
+        "status":  0,
+        "canupdate":  0,
+        "id_client":  6
+    },
+    {
+        "id_index":  4,
+        "id_sclad":  3,
+        "namesclad":  "триал1",
+        "status":  0,
+        "canupdate":  0,
+        "id_client":  7
+    },
+    {
+        "id_index":  5,
+        "id_sclad":  4,
+        "namesclad":  "Склад Нурий",
+        "status":  0,
+        "canupdate":  0,
+        "id_client":  9
+    },
+    {
+        "id_index":  6,
+        "id_sclad":  5,
+        "namesclad":  "Склад Владимир ocva",
+        "status":  0,
+        "canupdate":  0,
+        "id_client":  10
+    }
+]

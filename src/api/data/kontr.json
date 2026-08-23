@@ -1,0 +1,20 @@
+[{
+    "id_index":  1,
+    "id_server":  0,
+    "cod":  null,
+    "nik":  null,
+    "company":  null,
+    "name":  null,
+    "Ulica":  null,
+    "dom":  null,
+    "gorod":  null,
+    "postind":  null,
+    "strana":  null,
+    "email":  null,
+    "tel":  null,
+    "telmob":  null,
+    "fax":  null,
+    "prim":  null,
+    "status":  1,
+    "canupdate":  false
+}]

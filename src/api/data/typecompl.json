@@ -1,0 +1,107 @@
+[
+    {
+        "id_index":  1,
+        "id_typecompl":  1,
+        "nametype":  "Komponenty",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  2,
+        "id_typecompl":  2,
+        "nametype":  "Oczy",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  3,
+        "id_typecompl":  3,
+        "nametype":  "Profile",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  4,
+        "id_typecompl":  4,
+        "nametype":  "Ptatformy",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  5,
+        "id_typecompl":  5,
+        "nametype":  "Oringi",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  6,
+        "id_typecompl":  6,
+        "nametype":  "Uszczełka",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  7,
+        "id_typecompl":  7,
+        "nametype":  "Harpun",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  8,
+        "id_typecompl":  8,
+        "nametype":  "Tamy Led",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  9,
+        "id_typecompl":  9,
+        "nametype":  "Zasilacze",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  10,
+        "id_typecompl":  10,
+        "nametype":  "Oring 60mm",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  11,
+        "id_typecompl":  11,
+        "nametype":  "Oringi 70mm",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  12,
+        "id_typecompl":  12,
+        "nametype":  "Oring 20mm",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  13,
+        "id_typecompl":  13,
+        "nametype":  "Oring 30mm",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  14,
+        "id_typecompl":  14,
+        "nametype":  "Oring 40mm",
+        "canupdate":  0,
+        "status":  0
+    },
+    {
+        "id_index":  15,
+        "id_typecompl":  15,
+        "nametype":  "Przesylka Krajowa",
+        "canupdate":  0,
+        "status":  0
+    }
+]

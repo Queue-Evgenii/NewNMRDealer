@@ -1,0 +1,79 @@
+[
+    {
+        "id_index":  1,
+        "id_personal":  1,
+        "namepers":  "Руководитель",
+        "canupdate":  null,
+        "status":  0
+    },
+    {
+        "id_index":  2,
+        "id_personal":  2,
+        "namepers":  "Руководитель филиала",
+        "canupdate":  null,
+        "status":  0
+    },
+    {
+        "id_index":  3,
+        "id_personal":  3,
+        "namepers":  "Руководитель отдела",
+        "canupdate":  null,
+        "status":  0
+    },
+    {
+        "id_index":  4,
+        "id_personal":  4,
+        "namepers":  "Менеджер",
+        "canupdate":  null,
+        "status":  0
+    },
+    {
+        "id_index":  5,
+        "id_personal":  5,
+        "namepers":  "Начальник производства",
+        "canupdate":  null,
+        "status":  0
+    },
+    {
+        "id_index":  6,
+        "id_personal":  6,
+        "namepers":  "Гарпунщик",
+        "canupdate":  null,
+        "status":  0
+    },
+    {
+        "id_index":  7,
+        "id_personal":  7,
+        "namepers":  "Раскройщик",
+        "canupdate":  null,
+        "status":  0
+    },
+    {
+        "id_index":  8,
+        "id_personal":  8,
+        "namepers":  "Кладовщик",
+        "canupdate":  null,
+        "status":  0
+    },
+    {
+        "id_index":  9,
+        "id_personal":  9,
+        "namepers":  "Монтажник",
+        "canupdate":  null,
+        "status":  0
+    },
+    {
+        "id_index":  10,
+        "id_personal":  10,
+        "namepers":  "Замерщик",
+        "canupdate":  null,
+        "status":  0
+    },
+    {
+        "id_index":  11,
+        "id_personal":  11,
+        "namepers":  "Оператор ПК",
+        "canupdate":  null,
+        "status":  0
+    }
+]

@@ -1,0 +1,1642 @@
+[
+    {
+        "Id_Color":  326,
+        "Id_Server":  3,
+        "Name":  "410",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  5799106,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  327,
+        "Id_Server":  4,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  328,
+        "Id_Server":  5,
+        "Name":  "462",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  2567636,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  329,
+        "Id_Server":  6,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  330,
+        "Id_Server":  1,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  331,
+        "Id_Server":  2,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  332,
+        "Id_Server":  7,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  333,
+        "Id_Server":  8,
+        "Name":  "347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  2563086,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  334,
+        "Id_Server":  9,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  335,
+        "Id_Server":  10,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  336,
+        "Id_Server":  11,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  337,
+        "Id_Server":  12,
+        "Name":  "347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  0,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  338,
+        "Id_Server":  13,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  339,
+        "Id_Server":  14,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  340,
+        "Id_Server":  15,
+        "Name":  "519",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4227200,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  341,
+        "Id_Server":  16,
+        "Name":  "305",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  342,
+        "Id_Server":  17,
+        "Name":  "110",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777088,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  343,
+        "Id_Server":  18,
+        "Name":  "311",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  344,
+        "Id_Server":  19,
+        "Name":  "L319--500m",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8421504,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  345,
+        "Id_Server":  20,
+        "Name":  "313",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  10134425,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  346,
+        "Id_Server":  21,
+        "Name":  "307",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  13233661,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  347,
+        "Id_Server":  22,
+        "Name":  "333",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  6185551,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  348,
+        "Id_Server":  23,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  349,
+        "Id_Server":  24,
+        "Name":  "L160",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8729899,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  350,
+        "Id_Server":  25,
+        "Name":  "501",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8454143,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  351,
+        "Id_Server":  26,
+        "Name":  "577",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  1253145,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  352,
+        "Id_Server":  27,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  353,
+        "Id_Server":  28,
+        "Name":  "Agat 500",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  354,
+        "Id_Server":  29,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  355,
+        "Id_Server":  30,
+        "Name":  "A000",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16711808,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  356,
+        "Id_Server":  31,
+        "Name":  "Czarny Mat",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  -1,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  357,
+        "Id_Server":  32,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  358,
+        "Id_Server":  33,
+        "Name":  "347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  -1,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  359,
+        "Id_Server":  34,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  360,
+        "Id_Server":  35,
+        "Name":  "507",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8454143,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  361,
+        "Id_Server":  36,
+        "Name":  "511",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  33023,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  362,
+        "Id_Server":  37,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  363,
+        "Id_Server":  38,
+        "Name":  "571",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4194432,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  364,
+        "Id_Server":  39,
+        "Name":  "462",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  255,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  365,
+        "Id_Server":  40,
+        "Name":  "307",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  10220766,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  366,
+        "Id_Server":  41,
+        "Name":  "233",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4194432,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  367,
+        "Id_Server":  42,
+        "Name":  "476",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4194432,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  368,
+        "Id_Server":  43,
+        "Name":  "L305",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  369,
+        "Id_Server":  44,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  370,
+        "Id_Server":  45,
+        "Name":  "162",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16711680,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  371,
+        "Id_Server":  46,
+        "Name":  "L114",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16744448,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  372,
+        "Id_Server":  47,
+        "Name":  "570",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4227200,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  373,
+        "Id_Server":  48,
+        "Name":  "507",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8454143,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  374,
+        "Id_Server":  49,
+        "Name":  "305",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  375,
+        "Id_Server":  50,
+        "Name":  "412",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12615935,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  376,
+        "Id_Server":  51,
+        "Name":  "225",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16711808,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  377,
+        "Id_Server":  52,
+        "Name":  "901",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  378,
+        "Id_Server":  53,
+        "Name":  "Niebo",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16711680,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  379,
+        "Id_Server":  54,
+        "Name":  "501",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  380,
+        "Id_Server":  55,
+        "Name":  "L317",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  381,
+        "Id_Server":  56,
+        "Name":  "307",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12447984,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  382,
+        "Id_Server":  57,
+        "Name":  "156",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16711680,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  383,
+        "Id_Server":  58,
+        "Name":  "N305",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  384,
+        "Id_Server":  59,
+        "Name":  "303-p",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  385,
+        "Id_Server":  60,
+        "Name":  "L235",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4194432,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  386,
+        "Id_Server":  61,
+        "Name":  "Sky",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16711680,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  387,
+        "Id_Server":  62,
+        "Name":  "319",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  388,
+        "Id_Server":  63,
+        "Name":  "L347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4194368,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  389,
+        "Id_Server":  64,
+        "Name":  "231",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16744703,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  390,
+        "Id_Server":  65,
+        "Name":  "M 500",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4194368,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  391,
+        "Id_Server":  66,
+        "Name":  "M571",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16512,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  392,
+        "Id_Server":  67,
+        "Name":  "L303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  393,
+        "Id_Server":  68,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  394,
+        "Id_Server":  69,
+        "Name":  "123",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  395,
+        "Id_Server":  70,
+        "Name":  "519",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  396,
+        "Id_Server":  71,
+        "Name":  "347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  0,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  397,
+        "Id_Server":  72,
+        "Name":  "162",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16711808,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  398,
+        "Id_Server":  73,
+        "Name":  "501",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8454143,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  399,
+        "Id_Server":  74,
+        "Name":  "866",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  255,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  400,
+        "Id_Server":  75,
+        "Name":  "S501",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8454143,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  401,
+        "Id_Server":  76,
+        "Name":  "903",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  424665,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  402,
+        "Id_Server":  77,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  403,
+        "Id_Server":  78,
+        "Name":  "309",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  404,
+        "Id_Server":  79,
+        "Name":  "L347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4194368,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  405,
+        "Id_Server":  80,
+        "Name":  "L347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4194368,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  406,
+        "Id_Server":  81,
+        "Name":  "L100",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  15128242,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  407,
+        "Id_Server":  82,
+        "Name":  "L319",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  408,
+        "Id_Server":  83,
+        "Name":  "347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  -1,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  409,
+        "Id_Server":  84,
+        "Name":  "L347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  0,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  410,
+        "Id_Server":  85,
+        "Name":  "555",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4194368,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  411,
+        "Id_Server":  86,
+        "Name":  "BLACK \u0026 White",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  412,
+        "Id_Server":  87,
+        "Name":  "347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  -1,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  413,
+        "Id_Server":  88,
+        "Name":  "L478",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4194432,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  414,
+        "Id_Server":  89,
+        "Name":  "184",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8388672,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  415,
+        "Id_Server":  90,
+        "Name":  "682",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4227072,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  416,
+        "Id_Server":  91,
+        "Name":  "501",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8454143,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  417,
+        "Id_Server":  92,
+        "Name":  "507",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  65535,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  418,
+        "Id_Server":  93,
+        "Name":  "511",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  11395836,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  419,
+        "Id_Server":  94,
+        "Name":  "317",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  420,
+        "Id_Server":  95,
+        "Name":  "DESKOR",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  421,
+        "Id_Server":  96,
+        "Name":  "442",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8388863,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  422,
+        "Id_Server":  97,
+        "Name":  "L571",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  1188138,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  423,
+        "Id_Server":  98,
+        "Name":  "227",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8146063,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  424,
+        "Id_Server":  99,
+        "Name":  "402",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12615935,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  425,
+        "Id_Server":  100,
+        "Name":  "114 (320)",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16744448,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  426,
+        "Id_Server":  101,
+        "Name":  "347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  -1,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  427,
+        "Id_Server":  102,
+        "Name":  "Renolit TRM",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  428,
+        "Id_Server":  103,
+        "Name":  "TRL",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  429,
+        "Id_Server":  104,
+        "Name":  "L120",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777088,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  430,
+        "Id_Server":  105,
+        "Name":  "L201",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777088,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  431,
+        "Id_Server":  106,
+        "Name":  "L555",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  0,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  432,
+        "Id_Server":  107,
+        "Name":  "Clipso",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  433,
+        "Id_Server":  108,
+        "Name":  "L466",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  255,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  434,
+        "Id_Server":  109,
+        "Name":  "M501 450",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8454143,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  435,
+        "Id_Server":  110,
+        "Name":  "L229",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16744576,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  436,
+        "Id_Server":  111,
+        "Name":  "M303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  437,
+        "Id_Server":  112,
+        "Name":  "M303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  438,
+        "Id_Server":  113,
+        "Name":  "L400",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12615935,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  439,
+        "Id_Server":  114,
+        "Name":  "450",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  440,
+        "Id_Server":  115,
+        "Name":  "L347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  -1,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  441,
+        "Id_Server":  116,
+        "Name":  "450",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  442,
+        "Id_Server":  117,
+        "Name":  "450",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  443,
+        "Id_Server":  118,
+        "Name":  "462",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  255,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  444,
+        "Id_Server":  119,
+        "Name":  "L162",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  10485760,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  445,
+        "Id_Server":  120,
+        "Name":  "400",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  446,
+        "Id_Server":  121,
+        "Name":  "L156",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16744448,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  447,
+        "Id_Server":  122,
+        "Name":  "519",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16512,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  448,
+        "Id_Server":  123,
+        "Name":  "Acoustik",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  449,
+        "Id_Server":  124,
+        "Name":  "L652",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4259584,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  450,
+        "Id_Server":  125,
+        "Name":  "L184",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  10485760,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  451,
+        "Id_Server":  126,
+        "Name":  "M303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  452,
+        "Id_Server":  127,
+        "Name":  "L347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  0,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  453,
+        "Id_Server":  128,
+        "Name":  "L303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  454,
+        "Id_Server":  129,
+        "Name":  "L347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  0,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  455,
+        "Id_Server":  130,
+        "Name":  "L303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  456,
+        "Id_Server":  131,
+        "Name":  "303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  457,
+        "Id_Server":  132,
+        "Name":  "S303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  458,
+        "Id_Server":  133,
+        "Name":  "L319",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8421504,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  459,
+        "Id_Server":  134,
+        "Name":  "S360",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  460,
+        "Id_Server":  135,
+        "Name":  "L347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  -1,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  461,
+        "Id_Server":  136,
+        "Name":  "L303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  462,
+        "Id_Server":  137,
+        "Name":  "S303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  463,
+        "Id_Server":  138,
+        "Name":  "M303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  464,
+        "Id_Server":  139,
+        "Name":  "M303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  465,
+        "Id_Server":  140,
+        "Name":  "L317",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  466,
+        "Id_Server":  141,
+        "Name":  "Renolit L303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  467,
+        "Id_Server":  142,
+        "Name":  "310",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  468,
+        "Id_Server":  143,
+        "Name":  "M307",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8454143,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  469,
+        "Id_Server":  144,
+        "Name":  "BAUF",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  6828854,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  470,
+        "Id_Server":  145,
+        "Name":  "teqtum trm",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  471,
+        "Id_Server":  146,
+        "Name":  "3333",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4194368,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  472,
+        "Id_Server":  147,
+        "Name":  "L313",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  12632256,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  473,
+        "Id_Server":  148,
+        "Name":  "B1-500",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  474,
+        "Id_Server":  149,
+        "Name":  "M347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  -1,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  475,
+        "Id_Server":  150,
+        "Name":  "S347",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  -1,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  476,
+        "Id_Server":  151,
+        "Name":  "L303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  477,
+        "Id_Server":  152,
+        "Name":  "L303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  478,
+        "Id_Server":  153,
+        "Name":  "M511",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4227327,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  479,
+        "Id_Server":  154,
+        "Name":  "M303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  480,
+        "Id_Server":  155,
+        "Name":  "S507",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8454143,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  481,
+        "Id_Server":  156,
+        "Name":  "S 507",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4227327,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  482,
+        "Id_Server":  157,
+        "Name":  "S501",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8454143,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  483,
+        "Id_Server":  158,
+        "Name":  "T303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  484,
+        "Id_Server":  159,
+        "Name":  "L303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  485,
+        "Id_Server":  160,
+        "Name":  "S303",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  16777215,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  486,
+        "Id_Server":  161,
+        "Name":  "L721",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  4707838,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  487,
+        "Id_Server":  162,
+        "Name":  "TRM500",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  65535,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  488,
+        "Id_Server":  163,
+        "Name":  "180",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  8388608,
+        "kritost":  0,
+        "id_catalog":  null
+    },
+    {
+        "Id_Color":  489,
+        "Id_Server":  164,
+        "Name":  "MAT 307 500",
+        "status":  0,
+        "CanUpdate":  false,
+        "cod":  65535,
+        "kritost":  0,
+        "id_catalog":  null
+    }
+]
