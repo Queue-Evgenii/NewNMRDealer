@@ -4,9 +4,18 @@ import { storeToRefs } from 'pinia'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { useConfigurator } from '../stores/configurator'
+import { filmColor } from '../filmColors'
 
 const store = useConfigurator()
-const { points, closed, settings } = storeToRefs(store)
+const { shapesView, settings, order } = storeToRefs(store)
+
+// material finish per film type
+function filmFinish(film: string) {
+  if (film === 'Мат') return { metalness: 0.0, roughness: 0.95, opacity: 1 }
+  if (film === 'Сатин') return { metalness: 0.1, roughness: 0.55, opacity: 0.95 }
+  if (film === 'Фактура') return { metalness: 0.05, roughness: 0.7, opacity: 1 }
+  return { metalness: 0.35, roughness: 0.12, opacity: 0.9 } // Глянец
+}
 
 const host = ref<HTMLDivElement | null>(null)
 
@@ -14,72 +23,69 @@ let renderer: THREE.WebGLRenderer
 let scene: THREE.Scene
 let camera: THREE.PerspectiveCamera
 let controls: OrbitControls
-let mesh: THREE.Mesh | null = null
-let edgeLines: THREE.LineSegments | null = null
+let group: THREE.Group | null = null
 let raf = 0
 let ro: ResizeObserver | null = null
 
 const THICK = 40 // mm — visual slab thickness
 
+function disposeGroup() {
+  if (!group) return
+  group.traverse((o) => {
+    const any = o as unknown as { geometry?: THREE.BufferGeometry; material?: THREE.Material }
+    any.geometry?.dispose()
+    any.material?.dispose()
+  })
+  scene.remove(group)
+  group = null
+}
+
 function buildGeometry() {
-  if (mesh) {
-    scene.remove(mesh)
-    mesh.geometry.dispose()
-    ;(mesh.material as THREE.Material).dispose()
-    mesh = null
+  disposeGroup()
+
+  const closedShapes = shapesView.value.filter((s) => s.closed && s.points.length >= 3)
+  if (!closedShapes.length) return
+
+  // centre all shapes around a common origin (stable camera framing)
+  let cx = 0, cy = 0, count = 0
+  for (const s of closedShapes) for (const p of s.points) { cx += p.x; cy += p.y; count++ }
+  cx /= count || 1; cy /= count || 1
+
+  const finish = filmFinish(order.value.film)
+  group = new THREE.Group()
+
+  for (const s of closedShapes) {
+    const shape = new THREE.Shape()
+    s.points.forEach((p, i) => {
+      const x = p.x - cx
+      const y = -(p.y - cy)
+      if (i === 0) shape.moveTo(x, y)
+      else shape.lineTo(x, y)
+    })
+    shape.closePath()
+
+    const geom = new THREE.ExtrudeGeometry(shape, { depth: THICK, bevelEnabled: false })
+    geom.rotateX(-Math.PI / 2)
+
+    const mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(filmColor(order.value.film)),
+      metalness: finish.metalness,
+      roughness: finish.roughness,
+      transparent: finish.opacity < 1,
+      opacity: finish.opacity,
+      side: THREE.DoubleSide,
+    })
+    group.add(new THREE.Mesh(geom, mat))
+    group.add(new THREE.LineSegments(new THREE.EdgesGeometry(geom, 20), new THREE.LineBasicMaterial({ color: 0xffd54a })))
   }
-  if (edgeLines) {
-    scene.remove(edgeLines)
-    edgeLines.geometry.dispose()
-    edgeLines = null
-  }
-  if (!closed.value || points.value.length < 3) return
 
-  // centre the shape around origin so the camera framing is stable
-  let cx = 0, cy = 0
-  for (const p of points.value) { cx += p.x; cy += p.y }
-  cx /= points.value.length
-  cy /= points.value.length
-
-  const shape = new THREE.Shape()
-  points.value.forEach((p, i) => {
-    const x = p.x - cx
-    const y = -(p.y - cy) // flip Y so screen-down maps to world-up view
-    if (i === 0) shape.moveTo(x, y)
-    else shape.lineTo(x, y)
-  })
-  shape.closePath()
-
-  const geom = new THREE.ExtrudeGeometry(shape, {
-    depth: THICK,
-    bevelEnabled: false,
-  })
-  geom.rotateX(-Math.PI / 2) // lay flat like a ceiling
-
-  const mat = new THREE.MeshStandardMaterial({
-    color: 0x5aa0ff,
-    metalness: 0.15,
-    roughness: 0.35,
-    transparent: true,
-    opacity: 0.85,
-    side: THREE.DoubleSide,
-  })
-  mesh = new THREE.Mesh(geom, mat)
-  scene.add(mesh)
-
-  const edges = new THREE.EdgesGeometry(geom, 20)
-  edgeLines = new THREE.LineSegments(
-    edges,
-    new THREE.LineBasicMaterial({ color: 0xffd54a }),
-  )
-  scene.add(edgeLines)
-
+  scene.add(group)
   frameCamera()
 }
 
 function frameCamera() {
-  if (!mesh) return
-  const box = new THREE.Box3().setFromObject(mesh)
+  if (!group) return
+  const box = new THREE.Box3().setFromObject(group)
   const size = box.getSize(new THREE.Vector3())
   const centre = box.getCenter(new THREE.Vector3())
   const radius = Math.max(size.x, size.z, size.y) || 1000
@@ -133,11 +139,12 @@ onMounted(() => {
   loop()
 })
 
-watch([points, closed, settings], buildGeometry, { deep: true })
+watch([shapesView, settings, order], buildGeometry, { deep: true })
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)
   ro?.disconnect()
+  disposeGroup()
   controls.dispose()
   renderer.dispose()
   renderer.domElement.remove()

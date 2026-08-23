@@ -2,32 +2,24 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
+import { filmColor } from '../filmColors'
 
 const store = useConfigurator()
 const {
-  points, edges, area, perimeterMm, diagonalList, garpunLength, seamLength,
-  selectedPoint, selectedPointId, selectedEdgeKey, settings, shrunk,
+  allPoints, edges, area, perimeterMm, diagonalList, garpunLength, seamLength,
+  selectedPoint, selectedPointId, selectedEdgeKey, settings, cutAreaM2, shapesView,
   order, pricing, cost,
 } = storeToRefs(store)
 
 const cur = computed(() => order.value.currency)
 function money(v: number) { return v.toFixed(2) }
+function removeShape(id: string) { store.setActiveShape(id); store.deleteActiveShape() }
 
 const areaM2 = computed(() => (area.value / 1_000_000).toFixed(3))
 const perimM = computed(() => (perimeterMm.value / 1000).toFixed(3))
 const garpunM = computed(() => (garpunLength.value / 1000).toFixed(2))
 const seamM = computed(() => (seamLength.value / 1000).toFixed(2))
-const cutArea = computed(() => {
-  if (shrunk.value.length < 3) return '0'
-  // shoelace on shrunk contour
-  let s = 0
-  const n = shrunk.value.length
-  for (let i = 0; i < n; i++) {
-    const p = shrunk.value[i], q = shrunk.value[(i + 1) % n]
-    s += p.x * q.y - q.x * p.y
-  }
-  return (Math.abs(s) / 2 / 1_000_000).toFixed(3)
-})
+const cutArea = computed(() => cutAreaM2.value.toFixed(3))
 
 const selectedEdge = computed(() =>
   edges.value.find((e) => e.key === selectedEdgeKey.value) ?? null,
@@ -68,10 +60,13 @@ function importJSON(ev: Event) {
         <input type="text" :value="order.client" placeholder="—"
           @input="store.updateOrder({ client: ($event.target as HTMLInputElement).value })" /></label>
       <label class="row"><span>Полотно</span>
-        <select :value="order.film"
-          @change="store.updateOrder({ film: ($event.target as HTMLSelectElement).value })">
-          <option>Глянец</option><option>Мат</option><option>Сатин</option><option>Фактура</option>
-        </select></label>
+        <div class="film-field">
+          <span class="film-dot" :style="{ background: filmColor(order.film) }"></span>
+          <select :value="order.film"
+            @change="store.updateOrder({ film: ($event.target as HTMLSelectElement).value })">
+            <option>Глянец</option><option>Мат</option><option>Сатин</option><option>Фактура</option>
+          </select>
+        </div></label>
       <label class="row"><span>Цвет</span>
         <input type="text" :value="order.color"
           @input="store.updateOrder({ color: ($event.target as HTMLInputElement).value })" /></label>
@@ -84,7 +79,8 @@ function importJSON(ev: Event) {
       <div class="stat"><span>Периметр P</span><b>{{ perimM }} м</b></div>
       <div class="stat"><span>Гарпун</span><b>{{ garpunM }} м</b></div>
       <div class="stat"><span>Швы (спайка)</span><b>{{ seamM }} м</b></div>
-      <div class="stat"><span>Углов</span><b>{{ points.length }}</b></div>
+      <div class="stat"><span>Углов</span><b>{{ allPoints.length }}</b></div>
+      <div class="stat"><span>Фигур</span><b>{{ shapesView.length }}</b></div>
       <div class="stat hl"><span>Раскрой (усадка {{ settings.usad }}%)</span><b>{{ cutArea }} м²</b></div>
     </section>
 
@@ -155,11 +151,26 @@ function importJSON(ev: Event) {
       </label>
     </section>
 
+    <!-- shapes -->
+    <section>
+      <h3>Фигуры</h3>
+      <ul class="shapes">
+        <li v-for="(s, i) in shapesView" :key="s.id"
+          :class="{ sel: s.active }" @click="store.setActiveShape(s.id)">
+          <span>Фигура {{ i + 1 }}</span>
+          <span class="muted">{{ s.points.length }} т. {{ s.closed ? '' : '· открыт' }}</span>
+          <button v-if="shapesView.length > 1" class="x" title="Удалить фигуру"
+            @click.stop="removeShape(s.id)">✕</button>
+        </li>
+      </ul>
+      <button class="add-shape" @click="store.beginNewShape()">＋ Рисовать новую фигуру</button>
+    </section>
+
     <!-- vertices list -->
     <section>
-      <h3>Вершины ({{ points.length }})</h3>
+      <h3>Вершины ({{ allPoints.length }})</h3>
       <ul class="dots">
-        <li v-for="(p, i) in points" :key="p.id"
+        <li v-for="(p, i) in allPoints" :key="p.id"
           :class="{ sel: selectedPointId === p.id }" @click="store.selectPoint(p.id)">
           <span>#{{ i + 1 }}</span><span>{{ p.x }}, {{ p.y }}</span>
         </li>
@@ -209,9 +220,19 @@ input[type='number'], input[type='text'], select {
 .rates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 .rates label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #8fa3c4; }
 .rates input { width: 100%; }
+.film-field { display: flex; align-items: center; gap: 8px; width: 150px; }
+.film-field select { flex: 1; }
+.film-dot { width: 14px; height: 14px; border-radius: 4px; border: 1px solid #0006; flex: 0 0 auto; }
 .stat.total { border-top: 1px solid #223; margin-top: 6px; padding-top: 8px; font-size: 15px; }
 .stat.total b { color: #4fd08a; }
 .check { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 14px; cursor: pointer; }
+.shapes { list-style: none; margin: 0 0 8px; padding: 0; }
+.shapes li { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.shapes li:hover { background: #172136; }
+.shapes li.sel { background: #16274a; }
+.shapes .muted { color: #7f90b0; margin-left: auto; font-size: 12px; }
+.shapes .x { background: none; border: none; color: #ff8b8b; cursor: pointer; width: auto; padding: 0 4px; margin: 0; font-size: 13px; }
+.add-shape { width: 100%; padding: 9px; border-radius: 6px; cursor: pointer; background: #16233f; color: #9fc0ff; border: 1px dashed #2f6fed; font-size: 13px; }
 .dots, .diag { list-style: none; margin: 0; padding: 0; max-height: 180px; overflow-y: auto; }
 .dots li { display: flex; justify-content: space-between; padding: 5px 8px; border-radius: 5px; cursor: pointer; font-size: 13px; }
 .dots li:hover { background: #172136; }

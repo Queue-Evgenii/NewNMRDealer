@@ -22,6 +22,14 @@ export interface Edge {
   props: EdgeProps
 }
 
+/** One independent closed/open contour on the canvas (a separate ceiling piece). */
+export interface Shape {
+  id: string
+  points: Point[]
+  closed: boolean
+  edgeProps: Record<string, EdgeProps>
+}
+
 export interface Diagonal {
   fromId: string
   toId: string
@@ -40,8 +48,8 @@ export interface Settings {
 /** Order metadata + rates for the cost calculation (валюта PLN as in original). */
 export interface Order {
   client: string
-  film: string   // тип полотна / фактура
-  color: string
+  film: string   // тип полотна / фактура (Глянец / Мат / Сатин / Фактура)
+  color: string  // название цвета
   currency: string
 }
 
@@ -62,10 +70,12 @@ export interface CostBreakdown {
 
 export interface SerializedModel {
   version: number
-  points: Point[]
-  edgeProps: Record<string, EdgeProps>
-  closed: boolean
+  shapes: Shape[]
+  activeShapeId: string
   settings: Settings
   order?: Order
   pricing?: Pricing
+  tool?: string
+  selectedPointId?: string | null
+  selectedEdgeKey?: string | null
 }

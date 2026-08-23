@@ -7,7 +7,9 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuth()
 
-const bare = computed(() => route.meta.bare === true)
+// Treat the bare configurator (and any not-yet-resolved route) as chrome-less,
+// so the left app-nav shell only shows on real /app/* windows.
+const bare = computed(() => route.meta.bare === true || !route.name)
 
 const nav = [
   { name: 'dashboard', label: 'Рабочий стол', icon: '▦' },

@@ -3,14 +3,16 @@ import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 
 const store = useConfigurator()
-const { tool, settings, closed, past, future } = storeToRefs(store)
+const { tool, settings, activeShape, past, future } = storeToRefs(store)
 
 defineEmits<{ (e: 'fit'): void; (e: 'new'): void; (e: 'help'): void }>()
 </script>
 
 <template>
   <div class="toolbar">
-    <button class="cta" @click="$emit('new')">＋ Новый потолок</button>
+    <div class="cta-group">
+      <button class="cta" @click="$emit('new')">＋ Новый потолок</button>
+    </div>
 
     <div class="sep"></div>
 
@@ -34,7 +36,8 @@ defineEmits<{ (e: 'fit'): void; (e: 'new'): void; (e: 'help'): void }>()
 
     <!-- shape ops -->
     <div class="group">
-      <button :class="{ on: closed }" @click="store.toggleClosed()"><i>⬠</i><span>Контур</span></button>
+      <button @click="store.beginNewShape()"><i>◳</i><span>Фигура</span></button>
+      <button :class="{ on: activeShape.closed }" @click="store.toggleClosed()"><i>⬠</i><span>Контур</span></button>
       <button @click="store.mirror('h')"><i>⇋</i><span>Зеркало</span></button>
     </div>
 
@@ -59,10 +62,6 @@ defineEmits<{ (e: 'fit'): void; (e: 'new'): void; (e: 'help'): void }>()
   display: flex; align-items: stretch; flex-wrap: wrap; gap: 8px;
   padding: 8px 12px; background: #101828; border-bottom: 1px solid #223;
 }
-.cta {
-  padding: 0 16px; border-radius: 9px; cursor: pointer; font-size: 14px; font-weight: 600;
-  background: #2f6fed; border: none; color: #fff;
-}
 .help {
   display: flex; align-items: center; gap: 8px;
   padding: 0 14px; border-radius: 9px; cursor: pointer; font-size: 13px;
@@ -75,7 +74,8 @@ defineEmits<{ (e: 'fit'): void; (e: 'new'): void; (e: 'help'): void }>()
 }
 .sep { width: 1px; background: #263250; margin: 2px 2px; }
 .spacer { flex: 1; }
-.group { display: flex; gap: 3px; background: #0d1320; padding: 4px; border-radius: 10px; }
+.group, .cta-group { display: flex; gap: 3px; padding: 4px; border-radius: 10px; }
+.group { background: #0d1320; }
 .group button {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   min-width: 58px; padding: 5px 4px; color: #cbd5e1; background: transparent;
@@ -86,4 +86,8 @@ defineEmits<{ (e: 'fit'): void; (e: 'new'): void; (e: 'help'): void }>()
 .group button:hover:not(:disabled) { background: #1b2436; }
 .group button.on { background: #2f6fed; border-color: #2f6fed; color: #fff; }
 .group button:disabled { opacity: 0.35; cursor: default; }
+.cta-group .cta {
+  padding: 0 16px; border-radius: 9px; cursor: pointer; font-size: 14px; font-weight: 600;
+  background: #2f6fed; border: none; color: #fff;
+}
 </style>
