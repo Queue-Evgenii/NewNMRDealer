@@ -14,11 +14,11 @@ onMounted(async () => {
 })
 
 const cards = [
-  { key: 'orders', label: 'Заказы', to: '/orders', icon: '📋' },
-  { key: 'clients', label: 'Клиенты', to: '/clients', icon: '👤' },
-  { key: 'films', label: 'Полотна', to: '/films', icon: '🎞' },
-  { key: 'colors', label: 'Цвета', to: '/colors', icon: '🎨' },
-  { key: 'components', label: 'Склад', to: '/warehouse', icon: '📦' },
+  { key: 'orders', label: 'Заказы', to: 'orders', icon: '📋' },
+  { key: 'clients', label: 'Клиенты', to: 'clients', icon: '👤' },
+  { key: 'films', label: 'Полотна', to: 'films', icon: '🎞' },
+  { key: 'colors', label: 'Цвета', to: 'colors', icon: '🎨' },
+  { key: 'components', label: 'Склад', to: 'warehouse', icon: '📦' },
 ]
 </script>
 
@@ -27,12 +27,12 @@ const cards = [
     <h1>Рабочий стол</h1>
     <p class="sub">Данные загружены из оригинальной базы (mdes.mdb) через сервисный слой.</p>
     <div class="cards">
-      <button v-for="c in cards" :key="c.key" class="card" @click="router.push(c.to)">
+      <button v-for="c in cards" :key="c.key" class="card" @click="router.push({ name: c.to })">
         <div class="icon">{{ c.icon }}</div>
         <div class="num">{{ (stats as any)[c.key] }}</div>
         <div class="label">{{ c.label }}</div>
       </button>
-      <button class="card accent" @click="router.push('/constructor')">
+      <button class="card accent" @click="router.push({ name: 'app-constructor' })">
         <div class="icon">✎</div>
         <div class="num">2D / 3D</div>
         <div class="label">Конструктор полотна</div>

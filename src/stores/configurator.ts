@@ -182,12 +182,12 @@ export const useConfigurator = defineStore('configurator', {
       this.persist()
     },
 
-    movePoint(id: string, x: number, y: number, record = true) {
+    movePoint(id: string, x: number, y: number, record = true, doSnap = true) {
       const p = this.points.find((q) => q.id === id)
       if (!p) return
       if (record) this.snapshot()
-      p.x = this.maybeSnap(x)
-      p.y = this.maybeSnap(y)
+      p.x = doSnap ? this.maybeSnap(x) : Math.round(x)
+      p.y = doSnap ? this.maybeSnap(y) : Math.round(y)
       this.persist()
     },
 

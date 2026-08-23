@@ -27,7 +27,7 @@ const columns = [
 ]
 
 function open(row: Order) {
-  router.push(`/orders/${row.Id_zakaz}`)
+  router.push({ name: 'order', params: { id: row.Id_zakaz } })
 }
 </script>
 
@@ -35,7 +35,7 @@ function open(row: Order) {
   <div class="view">
     <header class="view-head">
       <h1>Заказы</h1>
-      <button class="primary" @click="router.push('/orders/new')">＋ Новый заказ</button>
+      <button class="primary" @click="router.push({ name: 'order', params: { id: 'new' } })">＋ Новый заказ</button>
     </header>
     <DataTable :rows="rows" :columns="columns" :loading="loading" row-key="Id_zakaz" @select="open" />
   </div>

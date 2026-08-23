@@ -15,7 +15,7 @@ async function submit() {
   error.value = ''
   const ok = await auth.login(login.value, pass.value)
   busy.value = false
-  if (ok) router.push('/orders')
+  if (ok) router.push({ name: 'dashboard' })
   else error.value = 'Неверный логин или пароль'
 }
 </script>

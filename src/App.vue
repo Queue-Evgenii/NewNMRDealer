@@ -10,20 +10,20 @@ const auth = useAuth()
 const bare = computed(() => route.meta.bare === true)
 
 const nav = [
-  { to: '/dashboard', label: 'Рабочий стол', icon: '▦' },
-  { to: '/orders', label: 'Заказы', icon: '📋' },
-  { to: '/constructor', label: 'Конструктор', icon: '✎' },
-  { to: '/clients', label: 'Клиенты', icon: '👤' },
-  { to: '/films', label: 'Полотна и цены', icon: '🎞' },
-  { to: '/colors', label: 'Цвета', icon: '🎨' },
-  { to: '/warehouse', label: 'Склад', icon: '📦' },
-  { to: '/users', label: 'Пользователи', icon: '🛡' },
+  { name: 'dashboard', label: 'Рабочий стол', icon: '▦' },
+  { name: 'orders', label: 'Заказы', icon: '📋' },
+  { name: 'app-constructor', label: 'Конструктор', icon: '✎' },
+  { name: 'clients', label: 'Клиенты', icon: '👤' },
+  { name: 'films', label: 'Полотна и цены', icon: '🎞' },
+  { name: 'colors', label: 'Цвета', icon: '🎨' },
+  { name: 'warehouse', label: 'Склад', icon: '📦' },
+  { name: 'users', label: 'Пользователи', icon: '🛡' },
 ]
 
-function isActive(to: string) {
-  return route.path === to || (to !== '/dashboard' && route.path.startsWith(to))
+function isActive(name: string) {
+  return route.name === name || (name === 'orders' && route.name === 'order')
 }
-function logout() { auth.logout(); router.push('/login') }
+function logout() { auth.logout(); router.push({ name: 'login' }) }
 </script>
 
 <template>
@@ -33,7 +33,7 @@ function logout() { auth.logout(); router.push('/login') }
     <aside class="side">
       <div class="brand"><span class="logo">◈</span> NMR Dealer</div>
       <nav>
-        <button v-for="n in nav" :key="n.to" :class="{ on: isActive(n.to) }" @click="router.push(n.to)">
+        <button v-for="n in nav" :key="n.name" :class="{ on: isActive(n.name) }" @click="router.push({ name: n.name })">
           <i>{{ n.icon }}</i><span>{{ n.label }}</span>
         </button>
       </nav>

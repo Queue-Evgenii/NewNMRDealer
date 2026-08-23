@@ -26,6 +26,60 @@ function angleLabelPos(p: { x: number; y: number }) {
 // hover preview of where a bend will be inserted (add mode)
 const hoverBend = ref<{ x: number; y: number } | null>(null)
 
+// alignment guides shown while dragging (vertical x / horizontal y)
+const guideX = ref<number | null>(null)
+const guideY = ref<number | null>(null)
+
+/**
+ * Smart snapping while dragging a vertex:
+ *  1) hard-snap onto another vertex,
+ *  2) align to another vertex's X or Y (straightens sides — shows a guide),
+ *  3) snap the side from the previous vertex to 15° steps (angle snap).
+ * Gated by the «Привязка» toggle.
+ */
+function smartSnap(id: string, m: Point): { x: number; y: number } {
+  guideX.value = null
+  guideY.value = null
+
+  const v = nearestVertex(m, id)
+  if (v) return { x: v.x, y: v.y }
+  if (!settings.value.snap) return { x: Math.round(m.x), y: Math.round(m.y) }
+
+  const thr = SNAP_PX * mmPerPx.value
+  let x = m.x
+  let y = m.y
+
+  // align X / Y to the nearest other vertex
+  let bx: number | null = null
+  let by: number | null = null
+  for (const p of points.value) {
+    if (p.id === id) continue
+    if (Math.abs(p.x - m.x) <= thr && (bx === null || Math.abs(p.x - m.x) < Math.abs(bx - m.x))) bx = p.x
+    if (Math.abs(p.y - m.y) <= thr && (by === null || Math.abs(p.y - m.y) < Math.abs(by - m.y))) by = p.y
+  }
+  if (bx !== null) { x = bx; guideX.value = bx }
+  if (by !== null) { y = by; guideY.value = by }
+
+  // angle snap to 15° from the previous vertex, unless both axes already aligned
+  if (bx === null || by === null) {
+    const idx = points.value.findIndex((p) => p.id === id)
+    const n = points.value.length
+    if (idx >= 0 && n >= 2) {
+      const prev = points.value[(idx - 1 + n) % n]
+      const ang = Math.atan2(y - prev.y, x - prev.x)
+      const step = Math.PI / 12 // 15°
+      const snapAng = Math.round(ang / step) * step
+      let diff = ((ang - snapAng + Math.PI) % (2 * Math.PI)) - Math.PI
+      if (Math.abs(diff) < Math.PI / 36) { // within 5°
+        const len = Math.hypot(x - prev.x, y - prev.y)
+        x = prev.x + Math.cos(snapAng) * len
+        y = prev.y + Math.sin(snapAng) * len
+      }
+    }
+  }
+  return { x: Math.round(x), y: Math.round(y) }
+}
+
 // ruler (Линейка) — two-click measure
 const rulerPts = ref<Point[]>([])
 const rulerDist = computed(() =>
@@ -223,9 +277,8 @@ function onPointerMove(ev: PointerEvent) {
   if (!drag) return
   if (drag.kind === 'point') {
     const m = clientToMm(ev.clientX, ev.clientY)
-    const near = nearestVertex(m, drag.id)
-    if (near) { m.x = near.x; m.y = near.y } // snap onto another vertex
-    store.movePoint(drag.id, m.x, m.y, false)
+    const s = smartSnap(drag.id, m)
+    store.movePoint(drag.id, s.x, s.y, false, false)
   } else if (drag.kind === 'pan') {
     const dx = (ev.clientX - drag.startX) * mmPerPx.value
     const dy = (ev.clientY - drag.startY) * mmPerPx.value
@@ -237,22 +290,34 @@ function onPointerMove(ev: PointerEvent) {
 function onPointerUp(ev: PointerEvent) {
   pointers.delete(ev.pointerId)
   if (pointers.size < 2) pinchStart = null
-  if (pointers.size === 0) drag = null
+  if (pointers.size === 0) {
+    drag = null
+    guideX.value = null
+    guideY.value = null
+  }
 }
 
 // ---- zoom (wheel + pinch) ------------------------------------------------
 function onWheel(ev: WheelEvent) {
   ev.preventDefault()
-  const factor = ev.deltaY < 0 ? 1.12 : 1 / 1.12
+  // smooth, proportional zoom based on scroll amount
+  const factor = Math.exp(-ev.deltaY * 0.0015)
   zoomAt(ev.clientX, ev.clientY, factor)
 }
 
+// Zoom keeping the point under the cursor fixed. Computed purely from math
+// (not from getScreenCTM after the mutation, which would still be stale).
 function zoomAt(clientX: number, clientY: number, factor: number) {
-  const before = clientToMm(clientX, clientY)
+  const rect = svgRef.value!.getBoundingClientRect()
+  const px = clientX - rect.left
+  const py = clientY - rect.top
+  const mppOld = mmPerPx.value
+  const worldX = panX.value + px * mppOld
+  const worldY = panY.value + py * mppOld
   zoom.value = Math.min(4, Math.max(0.01, zoom.value * factor))
-  const after = clientToMm(clientX, clientY)
-  panX.value += before.x - after.x
-  panY.value += before.y - after.y
+  const mppNew = 1 / zoom.value
+  panX.value = worldX - px * mppNew
+  panY.value = worldY - py * mppNew
 }
 
 function startPinch() {
@@ -270,14 +335,18 @@ function updatePinch() {
   if (!pinchStart) return
   const pts = [...pointers.values()]
   const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y)
-  const factor = dist / pinchStart.dist
   const cx = (pts[0].x + pts[1].x) / 2
   const cy = (pts[0].y + pts[1].y) / 2
-  const before = clientToMm(cx, cy)
-  zoom.value = Math.min(4, Math.max(0.01, pinchStart.zoom * factor))
-  const after = clientToMm(cx, cy)
-  panX.value += before.x - after.x
-  panY.value += before.y - after.y
+  const rect = svgRef.value!.getBoundingClientRect()
+  const px = cx - rect.left
+  const py = cy - rect.top
+  const mppOld = mmPerPx.value
+  const worldX = panX.value + px * mppOld
+  const worldY = panY.value + py * mppOld
+  zoom.value = Math.min(4, Math.max(0.01, pinchStart.zoom * (dist / pinchStart.dist)))
+  const mppNew = 1 / zoom.value
+  panX.value = worldX - px * mppNew
+  panY.value = worldY - py * mppNew
 }
 
 // ---- fit to content ------------------------------------------------------
@@ -344,6 +413,14 @@ onBeforeUnmount(() => ro?.disconnect())
         :stroke-width="thinW"
       />
     </g>
+
+    <!-- alignment guides -->
+    <line v-if="guideX !== null" :x1="guideX" :y1="panY" :x2="guideX"
+      :y2="panY + sizePx.h * mmPerPx" class="guide" :stroke-width="thinW"
+      :stroke-dasharray="`${5 * mmPerPx} ${5 * mmPerPx}`" />
+    <line v-if="guideY !== null" :x1="panX" :y1="guideY"
+      :x2="panX + sizePx.w * mmPerPx" :y2="guideY" class="guide" :stroke-width="thinW"
+      :stroke-dasharray="`${5 * mmPerPx} ${5 * mmPerPx}`" />
 
     <!-- shrink (usad) preview -->
     <polygon
@@ -470,6 +547,7 @@ onBeforeUnmount(() => ro?.disconnect())
 .vertex.sel { fill: #ffd54a; stroke: #ffd54a; }
 .vertex.start { fill: #12331f; stroke: #4fd08a; }
 .bend-preview { fill: rgba(127, 214, 255, 0.25); stroke: #7fd6ff; pointer-events: none; }
+.guide { stroke: #ff5db1; opacity: 0.8; pointer-events: none; }
 .angle {
   fill: #7fd6ff; text-anchor: middle; dominant-baseline: middle;
   paint-order: stroke; stroke: #0f1420; stroke-width: 0.6px; user-select: none;

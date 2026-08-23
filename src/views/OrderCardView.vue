@@ -41,7 +41,7 @@ const title = computed(() =>
   <div class="view" v-if="order">
     <header class="view-head">
       <div class="crumbs">
-        <a @click="router.push('/orders')">Заказы</a> <span>/</span> <b>{{ title }}</b>
+        <a @click="router.push({ name: 'orders' })">Заказы</a> <span>/</span> <b>{{ title }}</b>
       </div>
       <div class="tabs">
         <button :class="{ on: tab === 'params' }" @click="tab = 'params'">Параметры</button>
@@ -80,7 +80,7 @@ const title = computed(() =>
         <div><span>Статус</span><b>{{ statusName(order.statezak) }}</b></div>
       </div>
       <div class="actions">
-        <button class="ghost" @click="router.push('/orders')">Назад</button>
+        <button class="ghost" @click="router.push({ name: 'orders' })">Назад</button>
         <button class="primary" @click="tab = 'draw'">Перейти к чертежу →</button>
       </div>
     </div>
