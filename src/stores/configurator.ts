@@ -165,9 +165,13 @@ export const useConfigurator = defineStore('configurator', {
         : Math.round(v)
     },
 
-    addPoint(x: number, y: number, afterId?: string) {
+    addPoint(x: number, y: number, afterId?: string, doSnap = true) {
       this.snapshot()
-      const p: Point = { id: newId(), x: this.maybeSnap(x), y: this.maybeSnap(y) }
+      const p: Point = {
+        id: newId(),
+        x: doSnap ? this.maybeSnap(x) : Math.round(x),
+        y: doSnap ? this.maybeSnap(y) : Math.round(y),
+      }
       if (afterId) {
         const idx = this.points.findIndex((q) => q.id === afterId)
         this.points.splice(idx + 1, 0, p)

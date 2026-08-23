@@ -23,6 +23,9 @@ function angleLabelPos(p: { x: number; y: number }) {
   return { x: p.x + (dx / d) * off, y: p.y + (dy / d) * off }
 }
 
+// hover preview of where a bend will be inserted (add mode)
+const hoverBend = ref<{ x: number; y: number } | null>(null)
+
 // ruler (Линейка) — two-click measure
 const rulerPts = ref<Point[]>([])
 const rulerDist = computed(() =>
@@ -78,6 +81,30 @@ function nearestVertex(m: Point, excludeId?: string) {
   return best
 }
 
+// project a point onto a segment (clamped), for edge hit-testing
+function projectOnSeg(p: Point, a: Point, b: Point) {
+  const abx = b.x - a.x, aby = b.y - a.y
+  const len2 = abx * abx + aby * aby || 1
+  let t = ((p.x - a.x) * abx + (p.y - a.y) * aby) / len2
+  t = Math.max(0, Math.min(1, t))
+  const x = a.x + abx * t, y = a.y + aby * t
+  return { x, y, t, d: Math.hypot(p.x - x, p.y - y) }
+}
+
+// nearest edge within threshold — returns where to insert a bend (afterId = edge start)
+const EDGE_PX = 18
+function nearestEdge(m: Point) {
+  const thr = EDGE_PX * mmPerPx.value
+  let best: { afterId: string; x: number; y: number; d: number } | null = null
+  for (const e of edges.value) {
+    const pr = projectOnSeg(m, e.a, e.b)
+    // ignore projections that land on the endpoints (those are handled as vertices)
+    if (pr.t <= 0.02 || pr.t >= 0.98) continue
+    if (pr.d <= thr && (!best || pr.d < best.d)) best = { afterId: e.a.id, x: pr.x, y: pr.y, d: pr.d }
+  }
+  return best
+}
+
 // ---- grid ----------------------------------------------------------------
 const gridLines = computed(() => {
   if (!settings.value.showGrid) return { v: [], h: [] as number[] }
@@ -123,19 +150,32 @@ function onPointerDownBg(ev: PointerEvent) {
   }
   if (tool.value === 'add') {
     const m = clientToMm(ev.clientX, ev.clientY)
-    const near = nearestVertex(m)
-    if (near) {
-      // clicked back onto an existing vertex: close the contour (make polотно)
-      // if it's an endpoint of an open path, otherwise just select it.
+
+    // 1) clicked onto an existing vertex → close the open contour, else select it
+    const nearV = nearestVertex(m)
+    if (nearV) {
       if (!closed.value && points.value.length >= 3) {
         store.toggleClosed()
         store.setTool('select')
       } else {
-        store.selectPoint(near.id)
+        store.selectPoint(nearV.id)
       }
       return
     }
-    store.addPoint(m.x, m.y, selectedPointId.value ?? undefined)
+
+    // 2) clicked on a side → insert a bend on THAT side (split the edge, no yank)
+    const nearE = nearestEdge(m)
+    if (nearE) {
+      store.addPoint(nearE.x, nearE.y, nearE.afterId, false)
+      return
+    }
+
+    // 3) empty space
+    if (!closed.value) {
+      // still drawing an open contour → append the next point
+      store.addPoint(m.x, m.y)
+    }
+    // closed contour + empty space → ignore, so nothing jumps
     return
   }
   if (tool.value === 'ruler') {
@@ -171,6 +211,15 @@ function onPointerMove(ev: PointerEvent) {
     updatePinch()
     return
   }
+
+  // bend preview while hovering a side in add mode
+  if (!drag && tool.value === 'add') {
+    const m = clientToMm(ev.clientX, ev.clientY)
+    hoverBend.value = nearestVertex(m) ? null : nearestEdge(m)
+  } else if (hoverBend.value) {
+    hoverBend.value = null
+  }
+
   if (!drag) return
   if (drag.kind === 'point') {
     const m = clientToMm(ev.clientX, ev.clientY)
@@ -360,6 +409,13 @@ onBeforeUnmount(() => ro?.disconnect())
       />
     </g>
 
+    <!-- bend insert preview -->
+    <circle
+      v-if="hoverBend"
+      :cx="hoverBend.x" :cy="hoverBend.y" :r="handleR * 0.9"
+      class="bend-preview" :stroke-width="thinW * 1.5"
+    />
+
     <!-- ruler -->
     <g v-if="rulerPts.length">
       <line
@@ -413,6 +469,7 @@ onBeforeUnmount(() => ro?.disconnect())
 }
 .vertex.sel { fill: #ffd54a; stroke: #ffd54a; }
 .vertex.start { fill: #12331f; stroke: #4fd08a; }
+.bend-preview { fill: rgba(127, 214, 255, 0.25); stroke: #7fd6ff; pointer-events: none; }
 .angle {
   fill: #7fd6ff; text-anchor: middle; dominant-baseline: middle;
   paint-order: stroke; stroke: #0f1420; stroke-width: 0.6px; user-select: none;
