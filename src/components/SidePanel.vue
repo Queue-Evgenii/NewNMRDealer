@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import { filmColor } from '../filmColors'
 import { arcSagitta, arcRadius } from '../composables/useArcs'
+import { buildShareLink } from '../composables/useShareLink'
 import {
   IconGrid, IconDimensions, IconTriangles, IconSnap,
   IconUndo, IconRedo, IconDraw, IconDelete, IconClose,
@@ -60,6 +61,19 @@ const levelsShown = computed(() => levelStats.value.filter((l) => l.visible).len
 function stepLevels(d: number) {
   const n = Math.max(1, Math.min(levelStats.value.length, levelsShown.value + d))
   store.showUpToLevel(n)
+}
+
+// ссылка на чертёж: данные едут в самом адресе, сервер не нужен
+const shareState = ref('')
+async function shareLink() {
+  try {
+    const url = await buildShareLink(JSON.parse(store.serialize()))
+    await navigator.clipboard.writeText(url)
+    shareState.value = `Ссылка скопирована · ${url.length} символов`
+  } catch {
+    shareState.value = 'Не удалось скопировать — проверьте доступ к буферу обмена'
+  }
+  setTimeout(() => { shareState.value = '' }, 4000)
 }
 
 function exportJSON() {
@@ -319,6 +333,8 @@ function importJSON(ev: Event) {
     </section>
 
     <section class="io">
+      <button @click="shareLink">Ссылка на чертёж</button>
+      <p v-if="shareState" class="hint-small">{{ shareState }}</p>
       <button @click="exportJSON">Экспорт JSON</button>
       <label class="import">Импорт JSON
         <input type="file" accept="application/json" @change="importJSON" hidden />

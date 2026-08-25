@@ -82,6 +82,8 @@ interface State {
 }
 
 const STORAGE_KEY = 'nmr.configurator.v2'
+/** Сюда отложим свою работу, если чертёж открыли по чужой ссылке. */
+const BACKUP_KEY = 'nmr.configurator.backup'
 const HISTORY_LIMIT = 100
 
 function defaultSettings(): Settings {
@@ -1321,6 +1323,41 @@ export const useConfigurator = defineStore('configurator', {
       // инструмент и выделение — эфемерны: приложение всегда открывается в «Выборе»
       if (model.tool && TOOLS.includes(model.tool as Tool)) this.tool = model.tool as Tool
     },
+    /**
+     * Открыть чертёж, пришедший по ссылке. Прежнюю работу не теряем: кладём её
+     * в отдельный ключ, чтобы можно было вернуться одной кнопкой.
+     */
+    applyShared(model: SerializedModel) {
+      try {
+        const mine = localStorage.getItem(STORAGE_KEY)
+        if (mine) localStorage.setItem(BACKUP_KEY, mine)
+      } catch { /* ignore */ }
+      this.applySerialized(model)
+      this.past = []
+      this.future = []
+      this.tool = 'select'
+      this.persist()
+    },
+    /** Есть ли отложенная своя работа, к которой можно вернуться. */
+    hasBackup(): boolean {
+      try { return !!localStorage.getItem(BACKUP_KEY) } catch { return false }
+    },
+    /** Вернуть свой чертёж, отложенный при открытии ссылки. */
+    restoreBackup() {
+      try {
+        const raw = localStorage.getItem(BACKUP_KEY)
+        if (!raw) return
+        this.applySerialized(JSON.parse(raw))
+        localStorage.removeItem(BACKUP_KEY)
+        this.past = []
+        this.future = []
+        this.persist()
+      } catch { /* ignore */ }
+    },
+    dropBackup() {
+      try { localStorage.removeItem(BACKUP_KEY) } catch { /* ignore */ }
+    },
+
     exportJSON(): string { return JSON.stringify(JSON.parse(this.serialize()), null, 2) },
     importJSON(text: string) {
       try {

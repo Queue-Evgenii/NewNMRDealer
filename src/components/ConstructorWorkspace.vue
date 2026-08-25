@@ -14,13 +14,41 @@ import CeilingView3D from './CeilingView3D.vue'
 import NewCeilingDialog from './NewCeilingDialog.vue'
 import HelpOverlay from './HelpOverlay.vue'
 import { useShortcuts } from '../composables/useShortcuts'
+import { decodeModel } from '../composables/useShareLink'
 import { IconStepBack, IconCheck, IconClose } from '../icons'
 
 useShortcuts()
 const store = useConfigurator()
 const { tool, activeShape, measureBaseKey } = storeToRefs(store)
 
-onMounted(() => store.load())
+const sharedNotice = ref(false)
+
+onMounted(async () => {
+  // чертёж мог прийти ссылкой: данные лежат в hash и на сервер не уходят
+  const payload = new URLSearchParams(location.hash.split('?')[1] ?? '').get('d')
+  if (payload) {
+    const model = await decodeModel(payload)
+    // адрес чистим в любом случае, чтобы правки не путались с исходной ссылкой
+    history.replaceState(null, '', location.href.split('?')[0])
+    if (model) {
+      store.applyShared(model)
+      sharedNotice.value = true
+      canvasRef.value?.fit()
+      return
+    }
+  }
+  store.load()
+})
+
+function keepShared() {
+  store.dropBackup()
+  sharedNotice.value = false
+}
+function backToMine() {
+  store.restoreBackup()
+  sharedNotice.value = false
+  canvasRef.value?.fit()
+}
 
 const phone = useMediaQuery('(max-width: 900px)')
 
@@ -76,6 +104,13 @@ const hint = computed(() => {
         <CeilingView3D v-if="tab === '3d'" />
 
         <div v-if="hint" class="hint">{{ hint }}</div>
+
+        <!-- чертёж открыт по ссылке -->
+        <div v-if="sharedNotice" class="shared">
+          <span>Открыт чертёж по ссылке.</span>
+          <button v-if="store.hasBackup()" @click="backToMine">Вернуть мой</button>
+          <button class="primary" @click="keepShared">Оставить</button>
+        </div>
 
         <!-- рисование: явный выход, без угадывания -->
         <div v-if="tool === 'draw' && tab === '2d'" :class="['draw-hud', { phone }]">
@@ -154,4 +189,18 @@ const hint = computed(() => {
 .draw-hud button:disabled { opacity: 0.35; cursor: default; }
 
 .mode-float { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%); z-index: 6; }
+
+.shared {
+  position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px; z-index: 7;
+  padding: 8px 10px 8px 14px; border-radius: 12px; font-size: 13px; color: #dbe6ff;
+  background: rgba(13, 19, 32, 0.96); border: 1px solid #2f6fed;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.shared button {
+  padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 13px;
+  background: #1b2436; border: 1px solid #2a3550; color: #cbd5e1; white-space: nowrap;
+}
+.shared button.primary { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.ws-body.phone .shared { top: 62px; font-size: 12px; }
 </style>
