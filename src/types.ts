@@ -16,10 +16,22 @@ export interface EdgeProps {
 
 export interface Edge {
   key: string   // stable id = sorted pair of point ids
+  shapeId: string
   a: Point
   b: Point
   length: number // mm
   props: EdgeProps
+}
+
+/**
+ * Один треугольник замера — ссылки на вершины контура.
+ * Треугольники одной фигуры не пересекаются и вместе покрывают её целиком.
+ */
+export interface Triangle {
+  id: string
+  a: string // point id
+  b: string
+  c: string
 }
 
 /** One independent closed/open contour on the canvas (a separate ceiling piece). */
@@ -28,6 +40,15 @@ export interface Shape {
   points: Point[]
   closed: boolean
   edgeProps: Record<string, EdgeProps>
+  /** Разбиение фигуры на треугольники (метод треугольников). Пусто — не размечена. */
+  triangles: Triangle[]
+  /**
+   * Вершины замера, оказавшиеся внутри контура — например точка, из которой
+   * мерили до всех углов. В периметр и обход контура не входят.
+   */
+  innerPoints: Point[]
+  /** Геометрию правили руками после замера — длины больше не те, что диктовали. */
+  measureDirty: boolean
 }
 
 export interface Diagonal {
@@ -40,7 +61,8 @@ export interface Settings {
   gridStep: number    // mm between grid lines
   showGrid: boolean
   showMeasures: boolean
-  snap: boolean       // snap new/moved points to grid
+  showTriangles: boolean // показывать разбивку на треугольники
+  snap: boolean       // единая привязка: вершины, оси, углы, шаг сетки
   usad: number        // усадка, % (film shrinkage)
   pxPerMm: number     // canvas scale
 }

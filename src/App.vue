@@ -2,6 +2,10 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from './stores/auth'
+import {
+  IconDashboard, IconOrders, IconDraw, IconClients, IconFilms,
+  IconColors, IconWarehouse, IconUsers, IconLogo, IconLogout,
+} from './icons'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,14 +16,14 @@ const auth = useAuth()
 const bare = computed(() => route.meta.bare === true || !route.name)
 
 const nav = [
-  { name: 'dashboard', label: 'Рабочий стол', icon: '▦' },
-  { name: 'orders', label: 'Заказы', icon: '📋' },
-  { name: 'app-constructor', label: 'Конструктор', icon: '✎' },
-  { name: 'clients', label: 'Клиенты', icon: '👤' },
-  { name: 'films', label: 'Полотна и цены', icon: '🎞' },
-  { name: 'colors', label: 'Цвета', icon: '🎨' },
-  { name: 'warehouse', label: 'Склад', icon: '📦' },
-  { name: 'users', label: 'Пользователи', icon: '🛡' },
+  { name: 'dashboard', label: 'Рабочий стол', icon: IconDashboard },
+  { name: 'orders', label: 'Заказы', icon: IconOrders },
+  { name: 'app-constructor', label: 'Конструктор', icon: IconDraw },
+  { name: 'clients', label: 'Клиенты', icon: IconClients },
+  { name: 'films', label: 'Полотна и цены', icon: IconFilms },
+  { name: 'colors', label: 'Цвета', icon: IconColors },
+  { name: 'warehouse', label: 'Склад', icon: IconWarehouse },
+  { name: 'users', label: 'Пользователи', icon: IconUsers },
 ]
 
 function isActive(name: string) {
@@ -33,15 +37,17 @@ function logout() { auth.logout(); router.push({ name: 'login' }) }
 
   <div v-else class="shell">
     <aside class="side">
-      <div class="brand"><span class="logo">◈</span> NMR Dealer</div>
+      <div class="brand"><IconLogo class="logo" :size="20" :stroke-width="1.75" /> NMR Dealer</div>
       <nav>
         <button v-for="n in nav" :key="n.name" :class="{ on: isActive(n.name) }" @click="router.push({ name: n.name })">
-          <i>{{ n.icon }}</i><span>{{ n.label }}</span>
+          <component :is="n.icon" :size="18" :stroke-width="1.75" /><span>{{ n.label }}</span>
         </button>
       </nav>
       <div class="user" v-if="auth.user">
         <div class="who"><b>{{ auth.user.name }}</b><small>{{ auth.user.uslog }}</small></div>
-        <button class="logout" @click="logout" title="Выход">⏻</button>
+        <button class="logout" @click="logout" title="Выход">
+          <IconLogout :size="17" :stroke-width="1.75" />
+        </button>
       </div>
     </aside>
     <main class="content">
@@ -53,11 +59,11 @@ function logout() { auth.logout(); router.push({ name: 'login' }) }
 <style scoped>
 .shell { display: flex; height: 100vh; height: 100dvh; }
 .side { width: 230px; flex: 0 0 230px; background: #0b1120; border-right: 1px solid #1b2740; display: flex; flex-direction: column; }
-.brand { padding: 16px 18px; font-weight: 700; color: #e8eefc; border-bottom: 1px solid #1b2740; }
+.brand { display: flex; align-items: center; gap: 9px; padding: 16px 18px; font-weight: 700; color: #e8eefc; border-bottom: 1px solid #1b2740; }
 .logo { color: #2f6fed; }
 nav { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 3px; overflow-y: auto; }
 nav button { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 9px; border: none; background: transparent; color: #aeb9d0; cursor: pointer; font-size: 14px; text-align: left; }
-nav button i { font-style: normal; width: 20px; text-align: center; }
+nav button svg { flex: 0 0 auto; opacity: 0.9; }
 nav button:hover { background: #131d33; color: #e8eefc; }
 nav button.on { background: #2f6fed; color: #fff; }
 .user { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1px solid #1b2740; }

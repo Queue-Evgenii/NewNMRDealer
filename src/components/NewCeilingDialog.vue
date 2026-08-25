@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useConfigurator } from '../stores/configurator'
+import { IconRect, IconContour, IconFreeform } from '../icons'
 
 const store = useConfigurator()
 const emit = defineEmits<{ (e: 'close'): void }>()
@@ -27,22 +28,22 @@ function create() {
 
       <div class="kinds">
         <button :class="{ on: kind === 'rect' }" @click="kind = 'rect'">
-          <div class="ico">▭</div><span>Прямоугольник</span>
+          <div class="ico"><IconRect :size="26" :stroke-width="1.5" /></div><span>Прямоугольник</span>
         </button>
         <button :class="{ on: kind === 'lshape' }" @click="kind = 'lshape'">
-          <div class="ico">⌐</div><span>Г-образный</span>
+          <div class="ico"><IconContour :size="26" :stroke-width="1.5" /></div><span>Г-образный</span>
         </button>
         <button :class="{ on: kind === 'empty' }" @click="kind = 'empty'">
-          <div class="ico">✎</div><span>Рисовать с нуля</span>
+          <div class="ico"><IconFreeform :size="26" :stroke-width="1.5" /></div><span>Рисовать с нуля</span>
         </button>
       </div>
 
       <div v-if="kind !== 'empty'" class="fields">
-        <label>Ширина, мм <input type="number" v-model.number="w" min="100" step="50" /></label>
-        <label>Длина, мм <input type="number" v-model.number="h" min="100" step="50" /></label>
+        <label>Ширина, мм <input type="number" inputmode="decimal" v-model.number="w" min="100" step="50" /></label>
+        <label>Длина, мм <input type="number" inputmode="decimal" v-model.number="h" min="100" step="50" /></label>
         <template v-if="kind === 'lshape'">
-          <label>Вырез: ширина <input type="number" v-model.number="cw" min="50" step="50" /></label>
-          <label>Вырез: глубина <input type="number" v-model.number="ch" min="50" step="50" /></label>
+          <label>Вырез: ширина <input type="number" inputmode="decimal" v-model.number="cw" min="50" step="50" /></label>
+          <label>Вырез: глубина <input type="number" inputmode="decimal" v-model.number="ch" min="50" step="50" /></label>
         </template>
       </div>
       <p v-else class="hint">

@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../stores/auth'
+import { IconLogo } from '../icons'
 
 const auth = useAuth()
 const router = useRouter()
@@ -23,7 +24,7 @@ async function submit() {
 <template>
   <div class="login">
     <form class="card" @submit.prevent="submit">
-      <div class="logo">◈ NMR</div>
+      <div class="logo"><IconLogo :size="22" :stroke-width="1.75" /> NMR</div>
       <h1>Вход в систему</h1>
       <p class="sub">Конфигуратор натяжных потолков</p>
       <label>Логин<input v-model="login" autocomplete="username" /></label>

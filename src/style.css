@@ -6,3 +6,80 @@
 html, body, #app { margin: 0; height: 100%; }
 body { background: #0f1420; color: #e8eefc; overscroll-behavior: none; }
 button { font-family: inherit; }
+
+/* ---------------------------------------------------------------------
+ * Панель инструментов: одна сетка на все кнопки.
+ * Любая кнопка панели — плитка .tile фиксированного размера внутри
+ * контейнера .tool-group. Разница только в состоянии, не в габаритах.
+ * ------------------------------------------------------------------- */
+.tool-group {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #0d1320;
+  border: 1px solid #223;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 62px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #cbd5e1;
+  font: inherit;
+  cursor: pointer;
+}
+.tile span {
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.tile svg { flex: 0 0 auto; }
+.tile:hover:not(:disabled):not(.on) { background: #1b2436; }
+.tile:disabled { opacity: 0.32; cursor: default; }
+.tile:active:not(:disabled) { transform: translateY(1px); }
+/* выбранный режим — заливка */
+.tile.on { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+/* включённый тумблер вида — приглушённая подсветка, чтобы ряд не «кричал» */
+.tile.toggle.on { background: rgba(47, 111, 237, 0.16); border-color: rgba(47, 111, 237, 0.5); color: #7fa9ff; }
+.tile.danger:hover:not(:disabled) { background: #3a1b22; border-color: #5a2530; color: #ff9b9b; }
+
+/* основная кнопка панели — той же высоты, что и плитки */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid #2f6fed;
+  border-radius: 10px;
+  background: #2f6fed;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-primary:hover { background: #3f7bf5; }
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid #2a3550;
+  border-radius: 10px;
+  background: #1b2436;
+  color: #9fb3d6;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn-ghost:hover { background: #24314b; }

@@ -3,12 +3,18 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import { filmColor } from '../filmColors'
+import {
+  IconGrid, IconDimensions, IconTriangles, IconSnap,
+  IconUndo, IconRedo, IconDraw, IconDelete, IconClose,
+} from '../icons'
+
+defineProps<{ showView?: boolean }>()
 
 const store = useConfigurator()
 const {
   allPoints, edges, area, perimeterMm, diagonalList, garpunLength, seamLength,
-  selectedPoint, selectedPointId, selectedEdgeKey, settings, cutAreaM2, shapesView,
-  order, pricing, cost,
+  selectedPoint, selectedPointId, selectedEdgeKey, settings, cutAreaM2, shapesView, activeShape,
+  order, pricing, cost, past, future,
 } = storeToRefs(store)
 
 const cur = computed(() => order.value.currency)
@@ -53,6 +59,63 @@ function importJSON(ev: Event) {
 
 <template>
   <aside class="panel">
+    <!-- что выделено — всегда первым: на телефоне это верх шторки -->
+    <!-- выделенный угол -->
+    <section v-if="selectedPoint">
+      <h3>Точка</h3>
+      <label class="row"><span>X, мм</span>
+        <input type="number" inputmode="decimal" :value="selectedPoint.x" @change="editX(($event.target as HTMLInputElement).value)" /></label>
+      <label class="row"><span>Y, мм</span>
+        <input type="number" inputmode="decimal" :value="selectedPoint.y" @change="editY(($event.target as HTMLInputElement).value)" /></label>
+      <button class="danger" @click="store.deleteSelected()">Удалить точку</button>
+    </section>
+    <!-- выделенная сторона -->
+    <section v-if="selectedEdge">
+      <h3>Сторона</h3>
+      <label class="row"><span>Длина, мм</span>
+        <input type="number" inputmode="decimal" :value="Math.round(selectedEdge.length)"
+          @change="editLen(($event.target as HTMLInputElement).value)" /></label>
+      <label class="check">
+        <input type="checkbox" :checked="selectedEdge.props.garpun"
+          @change="store.setEdgeProp(selectedEdge.key, 'garpun', ($event.target as HTMLInputElement).checked)" />
+        Гарпун по стороне
+      </label>
+      <label class="check">
+        <input type="checkbox" :checked="selectedEdge.props.seam"
+          @change="store.setEdgeProp(selectedEdge.key, 'seam', ($event.target as HTMLInputElement).checked)" />
+        Шов / спайка
+      </label>
+    </section>
+
+    <!-- вид (на телефоне тумблеры живут здесь, а не в панели инструментов) -->
+    <section v-if="showView" class="view">
+      <h3>Вид</h3>
+      <div class="toggles">
+        <button :class="{ on: settings.showGrid }"
+          @click="store.updateSettings({ showGrid: !settings.showGrid })">
+          <IconGrid :size="16" :stroke-width="1.75" />Сетка</button>
+        <button :class="{ on: settings.showMeasures }"
+          @click="store.updateSettings({ showMeasures: !settings.showMeasures })">
+          <IconDimensions :size="16" :stroke-width="1.75" />Размеры</button>
+        <button :class="{ on: settings.showTriangles }"
+          @click="store.updateSettings({ showTriangles: !settings.showTriangles })">
+          <IconTriangles :size="16" :stroke-width="1.75" />Треуг.</button>
+        <button :class="{ on: settings.snap }"
+          @click="store.updateSettings({ snap: !settings.snap })">
+          <IconSnap :size="16" :stroke-width="1.75" />Привязка</button>
+      </div>
+      <div class="acts">
+        <button :disabled="!past.length" @click="store.undo()">
+          <IconUndo :size="16" :stroke-width="1.75" />Отмена</button>
+        <button :disabled="!future.length" @click="store.redo()">
+          <IconRedo :size="16" :stroke-width="1.75" />Повтор</button>
+        <button @click="store.beginDraw()">
+          <IconDraw :size="16" :stroke-width="1.75" />Фигура</button>
+        <button class="danger" @click="selectedPointId ? store.deleteSelected() : store.deleteActiveShape()">
+          <IconDelete :size="16" :stroke-width="1.75" />Удалить</button>
+      </div>
+    </section>
+
     <!-- order -->
     <section>
       <h3>Заказ</h3>
@@ -89,12 +152,12 @@ function importJSON(ev: Event) {
       <h3>Усадка полотна</h3>
       <label class="row">
         <span>Коэф. усадки, %</span>
-        <input type="number" step="0.5" :value="settings.usad"
+        <input type="number" inputmode="decimal" step="0.5" :value="settings.usad"
           @input="store.updateSettings({ usad: Number(($event.target as HTMLInputElement).value) })" />
       </label>
       <label class="row">
         <span>Шаг сетки, мм</span>
-        <input type="number" step="10" :value="settings.gridStep"
+        <input type="number" inputmode="decimal" step="10" :value="settings.gridStep"
           @input="store.updateSettings({ gridStep: Number(($event.target as HTMLInputElement).value) })" />
       </label>
     </section>
@@ -104,16 +167,16 @@ function importJSON(ev: Event) {
       <h3>Стоимость</h3>
       <div class="rates">
         <label>Полотно, {{ cur }}/м²
-          <input type="number" :value="pricing.filmPerM2"
+          <input type="number" inputmode="decimal" :value="pricing.filmPerM2"
             @input="store.updatePricing({ filmPerM2: Number(($event.target as HTMLInputElement).value) })" /></label>
         <label>Гарпун, {{ cur }}/м
-          <input type="number" :value="pricing.garpunPerM"
+          <input type="number" inputmode="decimal" :value="pricing.garpunPerM"
             @input="store.updatePricing({ garpunPerM: Number(($event.target as HTMLInputElement).value) })" /></label>
         <label>Спайка, {{ cur }}/м
-          <input type="number" :value="pricing.seamPerM"
+          <input type="number" inputmode="decimal" :value="pricing.seamPerM"
             @input="store.updatePricing({ seamPerM: Number(($event.target as HTMLInputElement).value) })" /></label>
         <label>Монтаж, {{ cur }}/м²
-          <input type="number" :value="pricing.workPerM2"
+          <input type="number" inputmode="decimal" :value="pricing.workPerM2"
             @input="store.updatePricing({ workPerM2: Number(($event.target as HTMLInputElement).value) })" /></label>
       </div>
       <div class="stat"><span>Полотно</span><b>{{ money(cost.film) }}</b></div>
@@ -123,33 +186,7 @@ function importJSON(ev: Event) {
       <div class="stat total"><span>Итого</span><b>{{ money(cost.total) }} {{ cur }}</b></div>
     </section>
 
-    <!-- selected point -->
-    <section v-if="selectedPoint">
-      <h3>Точка</h3>
-      <label class="row"><span>X, мм</span>
-        <input type="number" :value="selectedPoint.x" @change="editX(($event.target as HTMLInputElement).value)" /></label>
-      <label class="row"><span>Y, мм</span>
-        <input type="number" :value="selectedPoint.y" @change="editY(($event.target as HTMLInputElement).value)" /></label>
-      <button class="danger" @click="store.deleteSelected()">Удалить точку</button>
-    </section>
 
-    <!-- selected edge -->
-    <section v-if="selectedEdge">
-      <h3>Сторона</h3>
-      <label class="row"><span>Длина, мм</span>
-        <input type="number" :value="Math.round(selectedEdge.length)"
-          @change="editLen(($event.target as HTMLInputElement).value)" /></label>
-      <label class="check">
-        <input type="checkbox" :checked="selectedEdge.props.garpun"
-          @change="store.setEdgeProp(selectedEdge.key, 'garpun', ($event.target as HTMLInputElement).checked)" />
-        Гарпун по стороне
-      </label>
-      <label class="check">
-        <input type="checkbox" :checked="selectedEdge.props.seam"
-          @change="store.setEdgeProp(selectedEdge.key, 'seam', ($event.target as HTMLInputElement).checked)" />
-        Шов / спайка
-      </label>
-    </section>
 
     <!-- shapes -->
     <section>
@@ -160,19 +197,21 @@ function importJSON(ev: Event) {
           <span>Фигура {{ i + 1 }}</span>
           <span class="muted">{{ s.points.length }} т. {{ s.closed ? '' : '· открыт' }}</span>
           <button v-if="shapesView.length > 1" class="x" title="Удалить фигуру"
-            @click.stop="removeShape(s.id)">✕</button>
+            @click.stop="removeShape(s.id)"><IconClose :size="14" :stroke-width="2" /></button>
         </li>
       </ul>
-      <button class="add-shape" @click="store.beginNewShape()">＋ Рисовать новую фигуру</button>
+      <button class="add-shape" @click="store.beginDraw()">
+        <IconDraw :size="15" :stroke-width="1.75" />Нарисовать новую фигуру
+      </button>
     </section>
 
     <!-- vertices list -->
     <section>
-      <h3>Вершины ({{ allPoints.length }})</h3>
+      <h3>Углы активной фигуры ({{ activeShape.points.length }})</h3>
       <ul class="dots">
-        <li v-for="(p, i) in allPoints" :key="p.id"
+        <li v-for="(p, i) in activeShape.points" :key="p.id"
           :class="{ sel: selectedPointId === p.id }" @click="store.selectPoint(p.id)">
-          <span>#{{ i + 1 }}</span><span>{{ p.x }}, {{ p.y }}</span>
+          <span>т.{{ i + 1 }}</span><span>{{ p.x }}, {{ p.y }}</span>
         </li>
       </ul>
     </section>
@@ -231,8 +270,12 @@ input[type='number'], input[type='text'], select {
 .shapes li:hover { background: #172136; }
 .shapes li.sel { background: #16274a; }
 .shapes .muted { color: #7f90b0; margin-left: auto; font-size: 12px; }
-.shapes .x { background: none; border: none; color: #ff8b8b; cursor: pointer; width: auto; padding: 0 4px; margin: 0; font-size: 13px; }
-.add-shape { width: 100%; padding: 9px; border-radius: 6px; cursor: pointer; background: #16233f; color: #9fc0ff; border: 1px dashed #2f6fed; font-size: 13px; }
+.shapes .x { display: flex; align-items: center; background: none; border: none; color: #ff8b8b; cursor: pointer; width: auto; padding: 0 4px; margin: 0; }
+.add-shape {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; padding: 9px; border-radius: 6px; cursor: pointer;
+  background: #16233f; color: #9fc0ff; border: 1px dashed #2f6fed; font-size: 13px;
+}
 .dots, .diag { list-style: none; margin: 0; padding: 0; max-height: 180px; overflow-y: auto; }
 .dots li { display: flex; justify-content: space-between; padding: 5px 8px; border-radius: 5px; cursor: pointer; font-size: 13px; }
 .dots li:hover { background: #172136; }
@@ -244,6 +287,14 @@ button {
 }
 button:hover { background: #24314b; }
 button.danger { background: #3a1b22; border-color: #5a2530; color: #ff9b9b; }
+.view .toggles, .view .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.view .acts { margin-top: 6px; }
+.view button {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  margin-top: 0; padding: 10px 8px; font-size: 13px;
+}
+.view button:disabled { opacity: 0.35; cursor: default; }
+.view button.on { background: #2f6fed; border-color: #2f6fed; color: #fff; }
 .io { display: flex; flex-direction: column; }
 .import {
   display: block; text-align: center; padding: 9px; margin-top: 6px; border-radius: 6px;

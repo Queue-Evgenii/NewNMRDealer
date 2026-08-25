@@ -1,7 +1,10 @@
 import { onMounted, onBeforeUnmount } from 'vue'
 import { useConfigurator } from '../stores/configurator'
 
-/** Global keyboard shortcuts. Ignored while typing in a field. */
+/**
+ * Горячие клавиши. Раскладка как в редакторах: буква — режим, Esc — выход,
+ * Enter — подтвердить. Игнорируются, пока курсор в поле ввода.
+ */
 export function useShortcuts() {
   const store = useConfigurator()
 
@@ -19,19 +22,28 @@ export function useShortcuts() {
 
     if (ctrl && k === 'z' && !e.shiftKey) { e.preventDefault(); store.undo(); return }
     if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); store.redo(); return }
-    if (ctrl) return // leave other ctrl combos to the browser
+    if (ctrl) return
+
+    // режим «Рисовать» перехватывает подтверждение и откат точки
+    if (store.tool === 'draw') {
+      if (k === 'enter') { e.preventDefault(); store.finishDraw(true); return }
+      if (k === 'backspace') { e.preventDefault(); store.undoDrawPoint(); return }
+      if (k === 'escape') { e.preventDefault(); store.finishDraw(false); return }
+    }
 
     switch (k) {
       case 'delete':
       case 'backspace': e.preventDefault(); store.deleteSelected(); break
+      case 'escape': store.clearSelection(); break
       case 'v': store.setTool('select'); break
-      case 'a': store.setTool('add'); break
+      case 'd':
+      case 'p': store.setTool('draw'); break
       case 'r': store.setTool('ruler'); break
-      case 'h': store.setTool('pan'); break
+      case 't': store.setTool('measure'); break
       case 'g': store.updateSettings({ showGrid: !store.settings.showGrid }); break
       case 'm': store.updateSettings({ showMeasures: !store.settings.showMeasures }); break
-      case 'c': store.toggleClosed(); break
-      case 'escape': store.selectPoint(null); store.selectEdge(null); break
+      case 's': store.updateSettings({ snap: !store.settings.snap }); break
+      case 'c': if (!store.activeShape.triangles.length) store.toggleClosed(); break
     }
   }
 

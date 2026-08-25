@@ -1,93 +1,100 @@
 <script setup lang="ts">
+// Верхняя панель (десктоп). Все кнопки — плитки одного размера (.tile),
+// сгруппированы по смыслу: режимы / действия / вид. Отличается только
+// состояние: режим — заливка, тумблер вида — приглушённая подсветка.
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
+import ModeSwitch from './ModeSwitch.vue'
+import {
+  IconUndo, IconRedo, IconNewShape, IconMirror, IconContour, IconDelete,
+  IconGrid, IconDimensions, IconTriangles, IconSnap, IconFit, IconPlus, IconHelp,
+} from '../icons'
 
 const store = useConfigurator()
-const { tool, settings, activeShape, past, future } = storeToRefs(store)
+const { settings, activeShape, past, future, selectedPointId, selectedEdgeKey } = storeToRefs(store)
 
 defineEmits<{ (e: 'fit'): void; (e: 'new'): void; (e: 'help'): void }>()
+
+function del() {
+  if (selectedPointId.value || selectedEdgeKey.value) store.deleteSelected()
+  else store.deleteActiveShape()
+}
+const delTitle = () => selectedPointId.value
+  ? 'Удалить угол (Del)'
+  : selectedEdgeKey.value ? 'Убрать сторону (Del)' : 'Удалить фигуру'
 </script>
 
 <template>
   <div class="toolbar">
-    <div class="cta-group">
-      <button class="cta" @click="$emit('new')">＋ Новый потолок</button>
+    <button class="btn-primary" @click="$emit('new')">
+      <IconPlus :size="18" :stroke-width="2" />Новый потолок
+    </button>
+
+    <ModeSwitch />
+
+    <!-- действия -->
+    <div class="tool-group">
+      <button class="tile" :disabled="!past.length" title="Отменить (Ctrl+Z)" @click="store.undo()">
+        <IconUndo :size="18" :stroke-width="1.75" /><span>Отмена</span>
+      </button>
+      <button class="tile" :disabled="!future.length" title="Повторить (Ctrl+Y)" @click="store.redo()">
+        <IconRedo :size="18" :stroke-width="1.75" /><span>Повтор</span>
+      </button>
+      <button class="tile" title="Новая фигура — рисовать контур" @click="store.beginDraw()">
+        <IconNewShape :size="18" :stroke-width="1.75" /><span>Фигура</span>
+      </button>
+      <button class="tile" title="Отразить активную фигуру" @click="store.mirror('h')">
+        <IconMirror :size="18" :stroke-width="1.75" /><span>Зеркало</span>
+      </button>
+      <button v-if="!activeShape.triangles.length" class="tile toggle" :class="{ on: activeShape.closed }"
+        title="Замкнуть / разомкнуть контур (C)" @click="store.toggleClosed()">
+        <IconContour :size="18" :stroke-width="1.75" /><span>Контур</span>
+      </button>
+      <button class="tile danger" :title="delTitle()" @click="del()">
+        <IconDelete :size="18" :stroke-width="1.75" /><span>Удалить</span>
+      </button>
     </div>
 
-    <div class="sep"></div>
-
-    <!-- drawing tools (ToolNewDot / select / ruler) -->
-    <div class="group">
-      <button :class="{ on: tool === 'select' }" @click="store.setTool('select')">
-        <i>⭤</i><span>Выбор</span></button>
-      <button :class="{ on: tool === 'add' }" @click="store.setTool('add')">
-        <i>＋</i><span>Добавить</span></button>
-      <button :class="{ on: tool === 'ruler' }" @click="store.setTool('ruler')">
-        <i>📏</i><span>Линейка</span></button>
-      <button @click="store.deleteSelected()">
-        <i>🗑</i><span>Удалить</span></button>
-    </div>
-
-    <!-- history -->
-    <div class="group">
-      <button :disabled="!past.length" @click="store.undo()"><i>↶</i><span>Отмена</span></button>
-      <button :disabled="!future.length" @click="store.redo()"><i>↷</i><span>Повтор</span></button>
-    </div>
-
-    <!-- shape ops -->
-    <div class="group">
-      <button @click="store.beginNewShape()"><i>◳</i><span>Фигура</span></button>
-      <button :class="{ on: activeShape.closed }" @click="store.toggleClosed()"><i>⬠</i><span>Контур</span></button>
-      <button @click="store.mirror('h')"><i>⇋</i><span>Зеркало</span></button>
-    </div>
-
-    <!-- view -->
-    <div class="group">
-      <button :class="{ on: settings.showGrid }" @click="store.updateSettings({ showGrid: !settings.showGrid })">
-        <i>▦</i><span>Сетка</span></button>
-      <button :class="{ on: settings.showMeasures }" @click="store.updateSettings({ showMeasures: !settings.showMeasures })">
-        <i>↔</i><span>Размеры</span></button>
-      <button :class="{ on: settings.snap }" @click="store.updateSettings({ snap: !settings.snap })">
-        <i>◈</i><span>Привязка</span></button>
-      <button @click="$emit('fit')"><i>⤢</i><span>Вписать</span></button>
+    <!-- вид -->
+    <div class="tool-group">
+      <button class="tile toggle" :class="{ on: settings.showGrid }" title="Сетка (G)"
+        @click="store.updateSettings({ showGrid: !settings.showGrid })">
+        <IconGrid :size="18" :stroke-width="1.75" /><span>Сетка</span>
+      </button>
+      <button class="tile toggle" :class="{ on: settings.showMeasures }" title="Размеры и углы (M)"
+        @click="store.updateSettings({ showMeasures: !settings.showMeasures })">
+        <IconDimensions :size="18" :stroke-width="1.75" /><span>Размеры</span>
+      </button>
+      <button class="tile toggle" :class="{ on: settings.showTriangles }" title="Треугольники замера"
+        @click="store.updateSettings({ showTriangles: !settings.showTriangles })">
+        <IconTriangles :size="18" :stroke-width="1.75" /><span>Треуг.</span>
+      </button>
+      <button class="tile toggle" :class="{ on: settings.snap }" title="Привязка: вершины, оси, шаг сетки (S)"
+        @click="store.updateSettings({ snap: !settings.snap })">
+        <IconSnap :size="18" :stroke-width="1.75" /><span>Привязка</span>
+      </button>
+      <button class="tile" title="Вписать в экран" @click="$emit('fit')">
+        <IconFit :size="18" :stroke-width="1.75" /><span>Вписать</span>
+      </button>
     </div>
 
     <div class="spacer"></div>
-    <button class="help" @click="$emit('help')"><i class="q">?</i><span>Как это работает</span></button>
+
+    <button class="btn-ghost" @click="$emit('help')">
+      <IconHelp :size="18" :stroke-width="1.75" />Как это работает
+    </button>
   </div>
 </template>
 
 <style scoped>
 .toolbar {
-  display: flex; align-items: stretch; flex-wrap: wrap; gap: 8px;
-  padding: 8px 12px; background: #101828; border-bottom: 1px solid #223;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #101828;
+  border-bottom: 1px solid #223;
 }
-.help {
-  display: flex; align-items: center; gap: 8px;
-  padding: 0 14px; border-radius: 9px; cursor: pointer; font-size: 13px;
-  background: #1b2436; border: 1px solid #2a3550; color: #9fb3d6;
-}
-.help .q {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 18px; height: 18px; border-radius: 50%; font-style: normal; font-size: 12px;
-  background: #2f6fed; color: #fff;
-}
-.sep { width: 1px; background: #263250; margin: 2px 2px; }
 .spacer { flex: 1; }
-.group, .cta-group { display: flex; gap: 3px; padding: 4px; border-radius: 10px; }
-.group { background: #0d1320; }
-.group button {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  min-width: 58px; padding: 5px 4px; color: #cbd5e1; background: transparent;
-  border: 1px solid transparent; border-radius: 7px; cursor: pointer;
-}
-.group button i { font-size: 18px; font-style: normal; line-height: 1; }
-.group button span { font-size: 11px; }
-.group button:hover:not(:disabled) { background: #1b2436; }
-.group button.on { background: #2f6fed; border-color: #2f6fed; color: #fff; }
-.group button:disabled { opacity: 0.35; cursor: default; }
-.cta-group .cta {
-  padding: 0 16px; border-radius: 9px; cursor: pointer; font-size: 14px; font-weight: 600;
-  background: #2f6fed; border: none; color: #fff;
-}
 </style>

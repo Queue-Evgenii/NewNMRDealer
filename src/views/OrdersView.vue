@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import DataTable from '../components/DataTable.vue'
 import { api, filmName, colorName, statusName } from '../api'
 import type { Order } from '../api/types'
+import { IconPlus } from '../icons'
 
 const router = useRouter()
 const rows = ref<Order[]>([])
@@ -35,7 +36,9 @@ function open(row: Order) {
   <div class="view">
     <header class="view-head">
       <h1>Заказы</h1>
-      <button class="primary" @click="router.push({ name: 'order', params: { id: 'new' } })">＋ Новый заказ</button>
+      <button class="primary" @click="router.push({ name: 'order', params: { id: 'new' } })">
+        <IconPlus :size="16" :stroke-width="2" />Новый заказ
+      </button>
     </header>
     <DataTable :rows="rows" :columns="columns" :loading="loading" row-key="Id_zakaz" @select="open" />
   </div>
