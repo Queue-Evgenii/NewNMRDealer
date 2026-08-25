@@ -40,4 +40,7 @@ export {
   Power as IconLogout,
   RectangleHorizontal as IconRect,
   Spline as IconFreeform,
+  Eye as IconShow,
+  EyeOff as IconHide,
+  Focus as IconIsolate,
 } from 'lucide-vue-next'

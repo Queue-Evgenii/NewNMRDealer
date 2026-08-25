@@ -81,6 +81,17 @@ export function shrink(points: Point[], usadPercent: number): Point[] {
   }))
 }
 
+/** Лежит ли точка внутри замкнутого контура (луч вправо). */
+export function pointInPolygon(p: { x: number; y: number }, pts: { x: number; y: number }[]): boolean {
+  let inside = false
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const a = pts[i]
+    const b = pts[j]
+    if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside
+  }
+  return inside
+}
+
 export function bounds(points: Point[]) {
   if (!points.length) return { minX: 0, minY: 0, maxX: 0, maxY: 0, w: 0, h: 0 }
   let minX = Infinity

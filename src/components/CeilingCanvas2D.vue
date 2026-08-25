@@ -15,7 +15,8 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import { filmColor } from '../filmColors'
-import type { Point } from '../types'
+import { arcMidpoint, bulgeFromPoint, sampleArc } from '../composables/useArcs'
+import type { Edge, Point } from '../types'
 
 const store = useConfigurator()
 const {
@@ -106,23 +107,64 @@ const gridLines = computed(() => {
   return { v, h: hh, step }
 })
 
+// ---- видимость: спрятанные ярусы не рисуются и не ловят нажатия ---------
+const visibleShapes = computed(() => shapesView.value.filter((sh) => sh.visible))
+const visibleIds = computed(() => new Set(visibleShapes.value.map((sh) => sh.id)))
+const visibleEdges = computed(() => edges.value.filter((e) => visibleIds.value.has(e.shapeId)))
+const visiblePoints = computed(() => visibleShapes.value.flatMap((sh) => [...sh.points, ...sh.inner]))
+
+/**
+ * Подробности показываем только для активной фигуры: разбивка, углы и контур
+ * усадки у всех разом превращают чертёж в кашу.
+ */
+const activeIds = computed(() => new Set(activeShape.value?.points.map((p) => p.id) ?? []))
+const activeTriangles = computed(() => trianglesView.value.filter((t) => t.active))
+const activeAngles = computed(() => angles.value.filter((a) => activeIds.value.has(a.id)))
+
+// ---- стороны: прямые и скруглённые --------------------------------------
+type XY = { x: number; y: number }
+
+/** Точки стороны для отрисовки и попадания: дуга разложена по размеру на экране. */
+function edgePoints(e: Edge): XY[] {
+  if (!e.props.bulge) return [e.a, e.b]
+  const onScreen = e.length / mmPerPx.value
+  const steps = Math.max(8, Math.min(96, Math.round(onScreen / 5)))
+  return [e.a, ...sampleArc(e.a, e.b, e.props.bulge, steps), e.b]
+}
+const edgeLines = computed(() => visibleEdges.value.map((e) => ({ edge: e, pts: edgePoints(e) })))
+
+function pathOf(pts: XY[], close = false): string {
+  if (!pts.length) return ''
+  return 'M' + pts.map((p) => `${p.x},${p.y}`).join('L') + (close ? 'Z' : '')
+}
+/** Заливка полотна: внешний контур плюс вырезы (правило evenodd делает дыры). */
+function fillPath(sh: { outline: XY[]; holes: XY[][] }): string {
+  return [pathOf(sh.outline, true), ...sh.holes.map((h) => pathOf(h, true))].join(' ')
+}
+
 // ---- ручки середин сторон (врезать угол) --------------------------------
 // Видны только у активной фигуры в «Выборе». На тачскрине нет наведения,
 // поэтому «врезать угол» — видимая ручка, а не угаданный клик по стороне.
-const midHandles = computed(() => {
+const handleEdges = computed(() => {
   if (tool.value !== 'select') return []
   const s = activeShape.value
   if (!s || s.points.length < 2) return []
   const minPx = coarse ? 76 : 54
-  return activeEdges.value
-    .filter((e) => e.length / mmPerPx.value > minPx)
-    .map((e) => ({ key: e.key, ...mid(e.a, e.b) }))
+  return activeEdges.value.filter((e) => e.length / mmPerPx.value > minPx)
 })
+/** Прямая сторона: ручка врезает новый угол. */
+const midHandles = computed(() =>
+  handleEdges.value.filter((e) => !e.props.bulge).map((e) => ({ key: e.key, ...mid(e.a, e.b) })))
+/** Скруглённая сторона: ручка сидит на дуге и тянет кривизну. */
+const arcHandles = computed(() =>
+  handleEdges.value.filter((e) => e.props.bulge)
+    .map((e) => ({ key: e.key, ...arcMidpoint(e.a, e.b, e.props.bulge) })))
 
 // ---- hit-тест ------------------------------------------------------------
 type Hit =
   | { kind: 'vertex'; id: string; shapeId: string }
   | { kind: 'mid'; key: string }
+  | { kind: 'arc'; key: string }
   | { kind: 'edge'; key: string; shapeId: string }
   | { kind: 'shape'; shapeId: string }
   | { kind: 'empty' }
@@ -157,7 +199,7 @@ function hitTest(m: { x: number; y: number }): Hit {
   // 1. вершина (при наложении выигрывает активная фигура)
   let best: { id: string; shapeId: string; score: number } | null = null
   const thrV = px(HIT_VERTEX)
-  for (const sh of shapesView.value) {
+  for (const sh of visibleShapes.value) {
     for (const p of [...sh.points, ...sh.inner]) {
       const d = Math.hypot(p.x - m.x, p.y - m.y)
       if (d > thrV) continue
@@ -167,26 +209,36 @@ function hitTest(m: { x: number; y: number }): Hit {
   }
   if (best) return { kind: 'vertex', id: best.id, shapeId: best.shapeId }
 
-  // 2. ручка середины стороны
+  // 2. ручки на сторонах: кривизна и врезка угла
   const thrM = px(HIT_MID)
+  for (const h of arcHandles.value) {
+    if (Math.hypot(h.x - m.x, h.y - m.y) <= thrM) return { kind: 'arc', key: h.key }
+  }
   for (const h of midHandles.value) {
     if (Math.hypot(h.x - m.x, h.y - m.y) <= thrM) return { kind: 'mid', key: h.key }
   }
 
-  // 3. сторона
+  // 3. сторона (у скруглённой меряем расстояние до самой дуги)
   let bestE: { key: string; shapeId: string; d: number } | null = null
   const thrE = px(HIT_EDGE)
-  for (const e of edges.value) {
-    const d = distToSeg(m, e.a, e.b)
-    if (d <= thrE && (!bestE || d < bestE.d)) bestE = { key: e.key, shapeId: e.shapeId, d }
+  for (const { edge, pts } of edgeLines.value) {
+    let d = Infinity
+    for (let i = 0; i < pts.length - 1; i++) d = Math.min(d, distToSeg(m, pts[i] as Point, pts[i + 1] as Point))
+    if (d <= thrE && (!bestE || d < bestE.d)) bestE = { key: edge.key, shapeId: edge.shapeId, d }
   }
   if (bestE) return { kind: 'edge', key: bestE.key, shapeId: bestE.shapeId }
 
-  // 4. заливка фигуры (активная первой)
-  const ordered = [...shapesView.value].sort((a, b) => Number(b.active) - Number(a.active))
-  for (const sh of ordered) {
-    if (sh.closed && sh.points.length >= 3 && pointInPoly(m, sh.points)) return { kind: 'shape', shapeId: sh.id }
+  // 4. заливка фигуры. Выигрывает САМАЯ МЕЛКАЯ фигура под курсором: иначе
+  //    вложенный ярус или вырез не выбрать — их всегда перекрывает большое полотно.
+  //    Сквозь собственный вырез клик проходит насквозь.
+  let bestS: { id: string; area: number } | null = null
+  for (const sh of visibleShapes.value) {
+    if (!sh.closed || sh.outline.length < 3) continue
+    if (!pointInPoly(m, sh.outline as Point[])) continue
+    if (sh.holes.some((h) => pointInPoly(m, h as Point[]))) continue
+    if (!bestS || sh.areaMm < bestS.area) bestS = { id: sh.id, area: sh.areaMm }
   }
+  if (bestS) return { kind: 'shape', shapeId: bestS.id }
   return { kind: 'empty' }
 }
 
@@ -205,7 +257,7 @@ function snapDrag(id: string, m: { x: number; y: number }) {
 
   // 1. чужая вершина: липнем, а для соседней по контуру предлагаем сварку
   let near: { p: Point; d: number } | null = null
-  for (const p of allPoints.value) {
+  for (const p of visiblePoints.value) {
     if (p.id === id) continue
     const d = Math.hypot(p.x - m.x, p.y - m.y)
     if (d <= thr && (!near || d < near.d)) near = { p, d }
@@ -224,7 +276,7 @@ function snapDrag(id: string, m: { x: number; y: number }) {
   // 2. выравнивание по осям соседних вершин
   let x = m.x; let y = m.y
   let bx: number | null = null; let by: number | null = null
-  for (const p of allPoints.value) {
+  for (const p of visiblePoints.value) {
     if (p.id === id) continue
     if (Math.abs(p.x - m.x) <= thr && (bx === null || Math.abs(p.x - m.x) < Math.abs(bx - m.x))) bx = p.x
     if (Math.abs(p.y - m.y) <= thr && (by === null || Math.abs(p.y - m.y) < Math.abs(by - m.y))) by = p.y
@@ -262,7 +314,7 @@ function snapDrag(id: string, m: { x: number; y: number }) {
 function snapNew(m: { x: number; y: number }) {
   if (!settings.value.snap) return { x: Math.round(m.x), y: Math.round(m.y) }
   const thr = px(coarse ? 20 : 14)
-  for (const p of allPoints.value) {
+  for (const p of visiblePoints.value) {
     if (Math.hypot(p.x - m.x, p.y - m.y) <= thr) return { x: p.x, y: p.y }
   }
   const g = settings.value.gridStep || 1
@@ -285,9 +337,9 @@ const drawTail = computed(() => {
 })
 
 // ---- вспомогательное для отрисовки --------------------------------------
-const innerIds = computed(() => new Set(shapesView.value.flatMap((s) => s.inner.map((p) => p.id))))
+const innerIds = computed(() => new Set(visibleShapes.value.flatMap((s) => s.inner.map((p) => p.id))))
 
-function shapeLabel(sh: { id: string; points: Point[] }) {
+function shapeLabel(sh: { id: string; points: Point[]; level: number }) {
   const pts = sh.points
   if (!pts.length) return { x: 0, y: 0, text: '' }
   let minX = Infinity; let minY = Infinity
@@ -295,8 +347,9 @@ function shapeLabel(sh: { id: string; points: Point[] }) {
     minX = Math.min(minX, p.x); minY = Math.min(minY, p.y)
   }
   const i = shapesView.value.findIndex((s) => s.id === sh.id)
+  const tier = sh.level > 1 ? ` · ярус ${sh.level}` : ''
   // в левый верхний угол габарита: середина верхней стены занята размером
-  return { x: minX, y: minY - px(18), text: `Фигура ${i + 1}` }
+  return { x: minX, y: minY - px(18), text: `Фигура ${i + 1}${tier}` }
 }
 
 /** Центры фигур — нужны, чтобы отодвинуть подпись размера наружу. */
@@ -339,7 +392,7 @@ const edgeLabels = computed(() => edges.value.map((e) => {
 }))
 
 function angleLabelPos(a: { id: string; cx: number; cy: number }) {
-  const p = allPoints.value.find((q) => q.id === a.id)
+  const p = visiblePoints.value.find((q) => q.id === a.id)
   if (!p) return { x: 0, y: 0 }
   const dx = a.cx - p.x; const dy = a.cy - p.y
   const d = Math.hypot(dx, dy) || 1
@@ -358,7 +411,7 @@ type Press = {
   cx: number; cy: number
   mm: { x: number; y: number }
   moved: boolean
-  mode: 'undecided' | 'pan' | 'point' | 'edge' | 'shape'
+  mode: 'undecided' | 'pan' | 'point' | 'edge' | 'shape' | 'arc'
   panX: number; panY: number
   aId?: string; bId?: string
   ax?: number; ay?: number; bx?: number; by?: number
@@ -400,6 +453,12 @@ function beginDrag(p: Press) {
     if (!id) { p.mode = 'pan'; return }
     p.hit = { kind: 'vertex', id, shapeId: store.activeShapeId }
     p.mode = 'point'
+    return
+  }
+  if (p.hit.kind === 'arc') {
+    store.selectEdge(p.hit.key)
+    store.snapshot()
+    p.mode = 'arc'
     return
   }
   if (p.hit.kind === 'vertex') {
@@ -456,6 +515,9 @@ function onPointerMove(ev: PointerEvent) {
     const dy = mm.y - press.mm.y
     store.movePoint(press.aId!, press.ax! + dx, press.ay! + dy, false, false)
     store.movePoint(press.bId!, press.bx! + dx, press.by! + dy, false, false)
+  } else if (press.mode === 'arc' && press.hit.kind === 'arc') {
+    const e = edges.value.find((x) => x.key === (press!.hit as { key: string }).key)
+    if (e) store.setEdgeBulge(e.key, bulgeFromPoint(e.a, e.b, mm), false)
   } else if (press.mode === 'shape' && press.hit.kind === 'shape') {
     store.moveShape(press.hit.shapeId, mm.x - press.lastX!, mm.y - press.lastY!, false)
     press.lastX = mm.x; press.lastY = mm.y
@@ -508,6 +570,7 @@ function onTap(hit: Hit, mm: { x: number; y: number }) {
   if (hit.kind === 'vertex') store.selectPoint(hit.id)
   else if (hit.kind === 'edge') store.selectEdge(hit.key)
   else if (hit.kind === 'mid') store.insertOnEdge(hit.key)
+  else if (hit.kind === 'arc') store.selectEdge(hit.key)
   else if (hit.kind === 'shape') store.selectShape(hit.shapeId)
   else store.clearSelection()
 }
@@ -550,7 +613,7 @@ function updatePinch() {
 
 // ---- вписать -------------------------------------------------------------
 function fit() {
-  const pts = allPoints.value
+  const pts = visiblePoints.value.length ? visiblePoints.value : allPoints.value
   if (!pts.length) return
   let minX = Infinity; let minY = Infinity; let maxX = -Infinity; let maxY = -Infinity
   for (const p of pts) {
@@ -632,19 +695,22 @@ onBeforeUnmount(() => {
     <line v-if="guideY !== null" :x1="panX" :y1="guideY" :x2="panX + sizePx.w * mmPerPx" :y2="guideY"
       class="guide" :stroke-width="thinW" :stroke-dasharray="`${px(5)} ${px(5)}`" />
 
-    <!-- фигуры -->
-    <g v-for="sh in shapesView" :key="sh.id">
-      <polygon v-if="sh.closed && sh.shrunk.length" :points="ptsStr(sh.shrunk)" class="shrink"
-        :stroke-width="thinW" :stroke-dasharray="`${px(6)} ${px(6)}`" />
-      <polygon v-if="sh.closed" :points="ptsStr(sh.points)" :fill="fillColor" stroke="none"
+    <!-- фигуры: полотна с вырезами (evenodd) и незамкнутые контуры -->
+    <g v-for="sh in visibleShapes" :key="sh.id">
+      <polygon v-if="sh.active && sh.closed && sh.shrunk.length && sh.kind === 'ceiling'"
+        :points="ptsStr(sh.shrunk)"
+        class="shrink" :stroke-width="thinW" :stroke-dasharray="`${px(6)} ${px(6)}`" />
+      <path v-if="sh.closed && sh.kind === 'ceiling'" :d="fillPath(sh)" fill-rule="evenodd"
+        :fill="fillColor" stroke="none" :class="{ inactive: !sh.active }" />
+      <path v-else-if="sh.closed" :d="pathOf(sh.outline, true)" class="hole-fill"
         :class="{ inactive: !sh.active }" />
-      <polyline v-else-if="sh.points.length > 1" :points="ptsStr(sh.points)" class="open-path"
+      <path v-else-if="sh.points.length > 1" :d="pathOf(sh.points)" class="open-path"
         :stroke-width="edgeW" />
     </g>
 
     <!-- разбивка на треугольники -->
     <g v-if="settings.showTriangles">
-      <g v-for="t in trianglesView" :key="t.id" :class="{ dim: !t.active }">
+      <g v-for="t in activeTriangles" :key="t.id">
         <polygon :points="ptsStr(t.pts)" class="tri" :stroke-width="thinW" />
         <line v-for="d in t.inner" :key="t.id + d.key" :x1="d.a.x" :y1="d.a.y" :x2="d.b.x" :y2="d.b.y"
           class="tri-diag" :stroke-width="thinW * 1.6" :stroke-dasharray="`${px(9)} ${px(6)}`" />
@@ -659,15 +725,15 @@ onBeforeUnmount(() => {
       :stroke-dasharray="`${px(12)} ${px(7)}`" />
 
     <!-- стороны -->
-    <line v-for="e in edges" :key="e.key" :x1="e.a.x" :y1="e.a.y" :x2="e.b.x" :y2="e.b.y"
+    <path v-for="l in edgeLines" :key="l.edge.key" :d="pathOf(l.pts)" fill="none"
       :class="['edge', {
-        sel: selectedEdgeKey === e.key,
-        base: measureBaseKey === e.key,
-        garpun: e.props.garpun,
-        seam: e.props.seam,
+        sel: selectedEdgeKey === l.edge.key,
+        base: measureBaseKey === l.edge.key,
+        garpun: l.edge.props.garpun,
+        seam: l.edge.props.seam,
       }]"
-      :stroke-width="measureBaseKey === e.key ? edgeW * 2.4 : (e.props.seam ? edgeW * 1.8 : edgeW)"
-      :stroke-dasharray="e.props.seam ? `${px(10)} ${px(5)}` : undefined" />
+      :stroke-width="measureBaseKey === l.edge.key ? edgeW * 2.4 : (l.edge.props.seam ? edgeW * 1.8 : edgeW)"
+      :stroke-dasharray="l.edge.props.seam ? `${px(10)} ${px(5)}` : undefined" />
 
     <!-- «резинка» при рисовании -->
     <line v-if="drawTail" :x1="drawTail.a.x" :y1="drawTail.a.y" :x2="drawTail.b.x" :y2="drawTail.b.y"
@@ -681,8 +747,13 @@ onBeforeUnmount(() => {
 
     <!-- углы -->
     <g v-if="settings.showMeasures">
-      <text v-for="a in angles" :key="'a' + a.id" :x="angleLabelPos(a).x" :y="angleLabelPos(a).y"
+      <text v-for="a in activeAngles" :key="'a' + a.id" :x="angleLabelPos(a).x" :y="angleLabelPos(a).y"
         class="angle" :font-size="fontMm * 0.85">{{ a.deg }}°</text>
+    </g>
+
+    <!-- ручки кривизны на скруглённых сторонах -->
+    <g v-for="h in arcHandles" :key="'a' + h.key">
+      <circle :cx="h.x" :cy="h.y" :r="midR" class="arc-handle" :stroke-width="thinW * 1.5" />
     </g>
 
     <!-- ручки середин: врезать угол -->
@@ -693,7 +764,7 @@ onBeforeUnmount(() => {
     </g>
 
     <!-- вершины -->
-    <circle v-for="p in allPoints" :key="p.id" :cx="p.x" :cy="p.y"
+    <circle v-for="p in visiblePoints" :key="p.id" :cx="p.x" :cy="p.y"
       :r="selectedPointId === p.id ? vertexR * 1.3 : vertexR"
       :class="['vertex', {
         sel: selectedPointId === p.id,
@@ -707,8 +778,8 @@ onBeforeUnmount(() => {
       class="weld" :stroke-width="thinW * 2" />
 
     <!-- какая фигура активна -->
-    <template v-if="shapesView.length > 1">
-      <text v-for="sh in shapesView.filter((s) => s.active)" :key="'lbl' + sh.id"
+    <template v-if="visibleShapes.length > 1">
+      <text v-for="sh in visibleShapes.filter((s) => s.active)" :key="'lbl' + sh.id"
         :x="shapeLabel(sh).x" :y="shapeLabel(sh).y"
         class="shape-label on" :font-size="fontMm * 0.85">{{ shapeLabel(sh).text }}</text>
     </template>
@@ -757,6 +828,8 @@ onBeforeUnmount(() => {
 .vertex.inner { fill: #0f1420; stroke: #7fd6ff; }
 .weld { fill: none; stroke: #4fd08a; }
 .mid-handle { fill: rgba(20, 32, 56, 0.9); stroke: #4a5f8a; }
+.arc-handle { fill: rgba(255, 167, 38, 0.25); stroke: #ffa726; }
+.hole-fill { fill: rgba(15, 20, 32, 0.85); stroke: none; }
 .mid-plus { stroke: #9fb3d6; }
 .guide { stroke: #ff5db1; opacity: 0.85; }
 .tri { fill: rgba(127, 214, 255, 0.05); stroke: rgba(127, 214, 255, 0.18); }

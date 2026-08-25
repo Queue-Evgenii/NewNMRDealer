@@ -27,7 +27,20 @@ let group: THREE.Group | null = null
 let raf = 0
 let ro: ResizeObserver | null = null
 
-const THICK = 40 // mm — visual slab thickness
+const THICK = 40 // mm — толщина полотна на виде
+/**
+ * Условная высота помещения. Нужна, чтобы потолок читался потолком: сетка
+ * лежит на полу, а полотно висит над ней. Раньше сетка совпадала с плоскостью
+ * полотна, и сцена выглядела как «пол в клеточку».
+ */
+const ROOM_H = 2700
+
+/** Затемняет цвет полотна: каждый следующий ярус чуть темнее предыдущего. */
+function levelTint(hex: string, level: number): THREE.Color {
+  const c = new THREE.Color(hex)
+  const k = Math.max(0.55, 1 - (level - 1) * 0.14)
+  return c.multiplyScalar(k)
+}
 
 function disposeGroup() {
   if (!group) return
@@ -43,12 +56,16 @@ function disposeGroup() {
 function buildGeometry() {
   disposeGroup()
 
-  const closedShapes = shapesView.value.filter((s) => s.closed && s.points.length >= 3)
+  // вырезы отдельными телами не строим — они дырки в полотне яруса;
+  // спрятанные ярусы не строим вовсе
+  const closedShapes = shapesView.value.filter(
+    (s) => s.visible && s.kind === 'ceiling' && s.closed && s.outline.length >= 3,
+  )
   if (!closedShapes.length) return
 
   // centre all shapes around a common origin (stable camera framing)
   let cx = 0, cy = 0, count = 0
-  for (const s of closedShapes) for (const p of s.points) { cx += p.x; cy += p.y; count++ }
+  for (const s of closedShapes) for (const p of s.outline) { cx += p.x; cy += p.y; count++ }
   cx /= count || 1; cy /= count || 1
 
   const finish = filmFinish(order.value.film)
@@ -56,7 +73,7 @@ function buildGeometry() {
 
   for (const s of closedShapes) {
     const shape = new THREE.Shape()
-    s.points.forEach((p, i) => {
+    s.outline.forEach((p, i) => {
       const x = p.x - cx
       const y = -(p.y - cy)
       if (i === 0) shape.moveTo(x, y)
@@ -64,11 +81,27 @@ function buildGeometry() {
     })
     shape.closePath()
 
+    // колонны, короба и проёмы под нижний ярус — настоящие дырки в полотне
+    for (const hole of s.holes) {
+      if (hole.length < 3) continue
+      const path = new THREE.Path()
+      hole.forEach((p, i) => {
+        const x = p.x - cx
+        const y = -(p.y - cy)
+        if (i === 0) path.moveTo(x, y)
+        else path.lineTo(x, y)
+      })
+      path.closePath()
+      shape.holes.push(path)
+    }
+
     const geom = new THREE.ExtrudeGeometry(shape, { depth: THICK, bevelEnabled: false })
     geom.rotateX(-Math.PI / 2)
+    // ярус опущен вниз; совпадающие полотна разводим на волос, иначе мерцают
+    geom.translate(0, -s.drop - closedShapes.indexOf(s) * 0.4, 0)
 
     const mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(filmColor(order.value.film)),
+      color: levelTint(filmColor(order.value.film), s.level),
       metalness: finish.metalness,
       roughness: finish.roughness,
       transparent: finish.opacity < 1,
@@ -76,7 +109,35 @@ function buildGeometry() {
       side: THREE.DoubleSide,
     })
     group.add(new THREE.Mesh(geom, mat))
-    group.add(new THREE.LineSegments(new THREE.EdgesGeometry(geom, 20), new THREE.LineBasicMaterial({ color: 0xffd54a })))
+    // контуром подсвечиваем только активную фигуру — остальное обводим тускло
+    group.add(new THREE.LineSegments(
+      new THREE.EdgesGeometry(geom, 20),
+      new THREE.LineBasicMaterial({ color: s.active ? 0xffd54a : 0x3d4b6b }),
+    ))
+  }
+
+  // стены и пол: без них полотно висит в пустоте и высоту не прочитать
+  const wallPts: number[] = []
+  const floorPts: number[] = []
+  for (const s of closedShapes) {
+    if (s.level !== 1) continue
+    const ring = s.points
+    for (let i = 0; i < ring.length; i++) {
+      const x = ring[i].x - cx
+      const z = ring[i].y - cy
+      const nx = ring[(i + 1) % ring.length].x - cx
+      const nz = ring[(i + 1) % ring.length].y - cy
+      wallPts.push(x, 0, z, x, -ROOM_H, z)          // стойка от потолка до пола
+      floorPts.push(x, -ROOM_H, z, nx, -ROOM_H, nz) // контур по полу
+    }
+  }
+  if (wallPts.length) {
+    const g1 = new THREE.BufferGeometry()
+    g1.setAttribute('position', new THREE.Float32BufferAttribute(wallPts, 3))
+    group.add(new THREE.LineSegments(g1, new THREE.LineBasicMaterial({ color: 0x2a3550 })))
+    const g2 = new THREE.BufferGeometry()
+    g2.setAttribute('position', new THREE.Float32BufferAttribute(floorPts, 3))
+    group.add(new THREE.LineSegments(g2, new THREE.LineBasicMaterial({ color: 0x35456b })))
   }
 
   scene.add(group)
@@ -117,12 +178,17 @@ onMounted(() => {
   controls = new OrbitControls(camera, renderer.domElement)
   controls.enableDamping = true
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7))
-  const dir = new THREE.DirectionalLight(0xffffff, 1.1)
+  scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x1a2338, 0.75))
+  const dir = new THREE.DirectionalLight(0xffffff, 1.0)
   dir.position.set(1, 2, 1.5)
   scene.add(dir)
+  const fill = new THREE.DirectionalLight(0x9fc0ff, 0.35)
+  fill.position.set(-1.5, -0.5, -1)
+  scene.add(fill)
 
-  const grid = new THREE.GridHelper(20000, 40, 0x2a3550, 0x1e2740)
+  // сетка — это пол, поэтому она внизу, а не в плоскости полотна
+  const grid = new THREE.GridHelper(30000, 60, 0x243049, 0x1a2338)
+  grid.position.y = -ROOM_H
   scene.add(grid)
 
   buildGeometry()

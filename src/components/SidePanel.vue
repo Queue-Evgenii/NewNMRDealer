@@ -3,9 +3,11 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import { filmColor } from '../filmColors'
+import { arcSagitta, arcRadius } from '../composables/useArcs'
 import {
   IconGrid, IconDimensions, IconTriangles, IconSnap,
   IconUndo, IconRedo, IconDraw, IconDelete, IconClose,
+  IconShow, IconHide, IconIsolate, IconPlus,
 } from '../icons'
 
 defineProps<{ showView?: boolean }>()
@@ -14,7 +16,7 @@ const store = useConfigurator()
 const {
   allPoints, edges, area, perimeterMm, diagonalList, garpunLength, seamLength,
   selectedPoint, selectedPointId, selectedEdgeKey, settings, cutAreaM2, shapesView, activeShape,
-  order, pricing, cost, past, future,
+  order, pricing, cost, past, future, holeArea, levelStats,
 } = storeToRefs(store)
 
 const cur = computed(() => order.value.currency)
@@ -31,6 +33,18 @@ const selectedEdge = computed(() =>
   edges.value.find((e) => e.key === selectedEdgeKey.value) ?? null,
 )
 
+// скругление выбранной стороны: на объекте мерят хорду и стрелку
+const arcSag = computed(() =>
+  selectedEdge.value ? Math.round(arcSagitta(selectedEdge.value.a, selectedEdge.value.b, selectedEdge.value.props.bulge)) : 0)
+const arcRad = computed(() =>
+  selectedEdge.value ? Math.round(arcRadius(selectedEdge.value.a, selectedEdge.value.b, selectedEdge.value.props.bulge)) : 0)
+function editSagitta(v: string) {
+  if (selectedEdge.value) store.setEdgeSagitta(selectedEdge.value.key, Number(v))
+}
+function editRadius(v: string) {
+  if (selectedEdge.value) store.setEdgeRadius(selectedEdge.value.key, Number(v))
+}
+
 function editX(v: string) {
   if (selectedPoint.value) store.movePoint(selectedPoint.value.id, Number(v), selectedPoint.value.y)
 }
@@ -39,6 +53,13 @@ function editY(v: string) {
 }
 function editLen(v: string) {
   if (selectedEdge.value) store.setEdgeLength(selectedEdge.value.key, Number(v))
+}
+
+// слои = ярусы: показываем потолок по одному слою, чтобы разобраться в нём
+const levelsShown = computed(() => levelStats.value.filter((l) => l.visible).length)
+function stepLevels(d: number) {
+  const n = Math.max(1, Math.min(levelStats.value.length, levelsShown.value + d))
+  store.showUpToLevel(n)
 }
 
 function exportJSON() {
@@ -85,6 +106,75 @@ function importJSON(ev: Event) {
           @change="store.setEdgeProp(selectedEdge.key, 'seam', ($event.target as HTMLInputElement).checked)" />
         Шов / спайка
       </label>
+
+      <h3 class="sub">Скругление</h3>
+      <label class="row"><span>Стрелка, мм</span>
+        <input type="number" inputmode="decimal" min="0" :value="arcSag"
+          @change="editSagitta(($event.target as HTMLInputElement).value)" /></label>
+      <label class="row"><span>Радиус, мм</span>
+        <input type="number" inputmode="decimal" min="0" :value="arcRad"
+          @change="editRadius(($event.target as HTMLInputElement).value)" /></label>
+      <p class="hint-small">Стрелка — расстояние от середины хорды до стены. Хорда {{ Math.round(selectedEdge.chord) }} мм.</p>
+      <div v-if="selectedEdge.props.bulge" class="two">
+        <button @click="store.flipEdgeArc(selectedEdge.key)">В другую сторону</button>
+        <button @click="store.straightenEdge(selectedEdge.key)">Выпрямить</button>
+      </div>
+    </section>
+
+    <!-- слои: ярусы можно показывать по одному -->
+    <section v-if="levelStats.length">
+      <h3>Слои (ярусы)</h3>
+      <div v-if="levelStats.length > 1" class="stepper">
+        <button :disabled="levelsShown <= 1" title="Показать на слой меньше"
+          @click="stepLevels(-1)">−</button>
+        <span>Показано {{ levelsShown }} из {{ levelStats.length }}</span>
+        <button :disabled="levelsShown >= levelStats.length" title="Показать следующий слой"
+          @click="stepLevels(1)">＋</button>
+      </div>
+      <ul class="levels">
+        <li v-for="l in levelStats" :key="l.level" :class="{ off: !l.visible }">
+          <button class="eye" :title="l.visible ? 'Скрыть ярус' : 'Показать ярус'"
+            @click="store.toggleLevelVisible(l.level)">
+            <component :is="l.visible ? IconShow : IconHide" :size="15" :stroke-width="1.75" />
+          </button>
+          <span class="no">Ярус {{ l.level }}</span>
+          <span class="muted">{{ l.drop ? '−' + l.drop + ' мм' : 'базовый' }}</span>
+          <span class="val">{{ l.areaM2.toFixed(2) }} м²</span>
+          <button class="eye" title="Показать только этот ярус" @click="store.isolateLevel(l.level)">
+            <IconIsolate :size="14" :stroke-width="1.75" />
+          </button>
+        </li>
+      </ul>
+      <div class="two">
+        <button @click="store.addLevel()"><IconPlus :size="15" :stroke-width="2" />Добавить ярус</button>
+        <button :disabled="!levelStats.some((l) => !l.visible)" @click="store.showAllLevels()">
+          Показать все
+        </button>
+      </div>
+      <p class="hint-small">
+        Каждый ярус — отдельное полотно со своим профилем. Скрытые ярусы не мешают чертежу
+        и не ловят нажатия.
+      </p>
+    </section>
+
+    <!-- активная фигура: полотно или вырез, ярус, перепад -->
+    <section v-if="activeShape.closed">
+      <h3>Фигура</h3>
+      <div class="two seg">
+        <button :class="{ on: activeShape.kind === 'ceiling' }"
+          @click="store.setShapeKind(activeShape.id, 'ceiling')">Полотно</button>
+        <button :class="{ on: activeShape.kind === 'hole' }"
+          @click="store.setShapeKind(activeShape.id, 'hole')">Вырез</button>
+      </div>
+      <p v-if="activeShape.kind === 'hole'" class="hint-small">
+        Вырез вычитается из полотна, внутри которого нарисован: колонна, короб, проём под нижний ярус.
+      </p>
+      <label class="row"><span>Ярус</span>
+        <input type="number" inputmode="numeric" min="1" step="1" :value="activeShape.level"
+          @change="store.setShapeLevel(activeShape.id, Number(($event.target as HTMLInputElement).value))" /></label>
+      <label class="row"><span>Перепад вниз, мм</span>
+        <input type="number" inputmode="decimal" min="0" step="10" :value="activeShape.drop"
+          @change="store.setShapeDrop(activeShape.id, Number(($event.target as HTMLInputElement).value))" /></label>
     </section>
 
     <!-- вид (на телефоне тумблеры живут здесь, а не в панели инструментов) -->
@@ -142,6 +232,7 @@ function importJSON(ev: Event) {
       <div class="stat"><span>Периметр P</span><b>{{ perimM }} м</b></div>
       <div class="stat"><span>Гарпун</span><b>{{ garpunM }} м</b></div>
       <div class="stat"><span>Швы (спайка)</span><b>{{ seamM }} м</b></div>
+      <div v-if="holeArea > 0" class="stat"><span>Вырезы</span><b>−{{ (holeArea / 1e6).toFixed(3) }} м²</b></div>
       <div class="stat"><span>Углов</span><b>{{ allPoints.length }}</b></div>
       <div class="stat"><span>Фигур</span><b>{{ shapesView.length }}</b></div>
       <div class="stat hl"><span>Раскрой (усадка {{ settings.usad }}%)</span><b>{{ cutArea }} м²</b></div>
@@ -194,8 +285,11 @@ function importJSON(ev: Event) {
       <ul class="shapes">
         <li v-for="(s, i) in shapesView" :key="s.id"
           :class="{ sel: s.active }" @click="store.setActiveShape(s.id)">
-          <span>Фигура {{ i + 1 }}</span>
-          <span class="muted">{{ s.points.length }} т. {{ s.closed ? '' : '· открыт' }}</span>
+          <span>{{ s.kind === 'hole' ? 'Вырез' : 'Фигура' }} {{ i + 1 }}</span>
+          <span class="muted">
+            {{ s.points.length }} т.<template v-if="s.level > 1"> · ярус {{ s.level }}</template>
+            <template v-if="!s.closed"> · открыт</template>
+          </span>
           <button v-if="shapesView.length > 1" class="x" title="Удалить фигуру"
             @click.stop="removeShape(s.id)"><IconClose :size="14" :stroke-width="2" /></button>
         </li>
@@ -287,6 +381,29 @@ button {
 }
 button:hover { background: #24314b; }
 button.danger { background: #3a1b22; border-color: #5a2530; color: #ff9b9b; }
+.sub { margin-top: 14px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.two button { margin-top: 6px; }
+.seg button.on { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.hint-small { margin: 6px 0 0; font-size: 11px; color: #7f90b0; line-height: 1.45; }
+.levels { list-style: none; margin: 0; padding: 0; }
+.levels li { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 5px; font-size: 13px; }
+.levels li.off { opacity: 0.45; }
+.levels .eye {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; padding: 0; margin: 0; flex: 0 0 auto;
+  background: none; border: none; color: #8fa3c4; cursor: pointer; border-radius: 5px;
+}
+.levels .eye:hover { background: #24314b; color: #dbe6ff; }
+.stepper { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; color: #8fa3c4; }
+.stepper button {
+  width: 28px; height: 28px; padding: 0; margin: 0; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+}
+.stepper span { flex: 1; text-align: center; }
+.levels li:nth-child(odd) { background: #141d31; }
+.levels .no { color: #7fd6ff; }
+.levels .val { margin-left: auto; font-variant-numeric: tabular-nums; }
 .view .toggles, .view .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .view .acts { margin-top: 6px; }
 .view button {

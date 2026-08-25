@@ -44,6 +44,10 @@ export function useShortcuts() {
       case 'm': store.updateSettings({ showMeasures: !store.settings.showMeasures }); break
       case 's': store.updateSettings({ snap: !store.settings.snap }); break
       case 'c': if (!store.activeShape.triangles.length) store.toggleClosed(); break
+      // разбор потолка по слоям
+      case '[': store.showUpToLevel(store.levelStats.filter((l) => l.visible).length - 1); break
+      case ']': store.showUpToLevel(store.levelStats.filter((l) => l.visible).length + 1); break
+      case '\\': store.showAllLevels(); break
     }
   }
 

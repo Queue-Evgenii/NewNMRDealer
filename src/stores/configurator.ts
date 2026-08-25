@@ -1,21 +1,31 @@
-import { defineStore } from 'pinia'
+import { acceptHMRUpdate, defineStore } from 'pinia'
 import type {
-  Point, Edge, EdgeProps, Shape, Triangle, Settings, Order, Pricing, CostBreakdown, SerializedModel,
+  Point, Edge, EdgeProps, Shape, ShapeKind, Triangle, Settings, Order, Pricing,
+  CostBreakdown, SerializedModel,
 } from '../types'
 import {
   edgeKey,
   polygonArea,
-  perimeter,
   diagonals,
   shrink,
   centroid,
   newId,
+  pointInPolygon,
   snapValue,
 } from '../composables/useGeometry'
+import {
+  arcLength,
+  arcRadius,
+  arcSagitta,
+  bulgeFromRadius,
+  bulgeFromSagitta,
+  densify,
+} from '../composables/useArcs'
 import {
   apexAngleDeg,
   apexFrom,
   boundaryLoop,
+  bridgeHoles,
   cross3,
   earClip,
   heronArea,
@@ -64,6 +74,8 @@ interface State {
   drawShapeId: string | null
   /** Сторона-основание для следующего треугольника — живёт отдельно от выделения. */
   measureBaseKey: string | null
+  /** Ярусы, спрятанные с чертежа: чтобы разбирать многоярусный потолок по слоям. */
+  hiddenLevels: number[]
   triPreview: TriPreview | null
   past: string[]
   future: string[]
@@ -82,8 +94,121 @@ function defaultPricing(): Pricing {
   return { filmPerM2: 45, garpunPerM: 6, seamPerM: 12, workPerM2: 20 }
 }
 
+/** Свойства стороны по умолчанию: гарпун есть, шва нет, сторона прямая. */
+const DEFAULT_EDGE: EdgeProps = { garpun: true, seam: false, bulge: 0 }
+
 function makeShape(points: Point[], closed: boolean): Shape {
-  return { id: newId(), points, closed, edgeProps: {}, triangles: [], innerPoints: [], measureDirty: false }
+  return {
+    id: newId(), points, closed, edgeProps: {}, triangles: [], innerPoints: [],
+    measureDirty: false, kind: 'ceiling', level: 1, drop: 0,
+  }
+}
+
+/**
+ * Контур в точках: скруглённые стороны разложены на хорды. Нужен там, где
+ * работают с многоугольником — площадь, попадание, 3D, усадка.
+ */
+function shapeOutline(shape: Shape, steps = 48) {
+  return densify(shape.points, shape.closed, (a, b) => shape.edgeProps[edgeKey(a.id, b.id)]?.bulge ?? 0, steps)
+}
+/** Площадь контура с учётом скруглений, мм². */
+function outlineArea(shape: Shape): number {
+  if (!shape.closed || shape.points.length < 3) return 0
+  const pts = shapeOutline(shape)
+  let sum = 0
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i]
+    const q = pts[(i + 1) % pts.length]
+    sum += p.x * q.y - q.x * p.y
+  }
+  return Math.abs(sum) / 2
+}
+/** Точка лежит на самом контуре (вершину могли поставить прямо на стену). */
+function onRing(p: { x: number; y: number }, ring: { x: number; y: number }[]): boolean {
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i]
+    const b = ring[(i + 1) % ring.length]
+    const abx = b.x - a.x
+    const aby = b.y - a.y
+    const len2 = abx * abx + aby * aby || 1
+    let t = ((p.x - a.x) * abx + (p.y - a.y) * aby) / len2
+    t = Math.max(0, Math.min(1, t))
+    if (Math.hypot(p.x - (a.x + abx * t), p.y - (a.y + aby * t)) < 0.6) return true
+  }
+  return false
+}
+
+/**
+ * Фигура целиком лежит внутри другой: ВСЕ её вершины внутри контура (или на
+ * нём) и она строго меньше по площади.
+ *
+ * Проверяем именно все вершины, а не центр: у вогнутой фигуры центр может
+ * оказаться снаружи, и вложенность бы не опозналась.
+ */
+function nestedIn(child: Shape, parent: Shape): boolean {
+  if (child === parent || !child.closed || !parent.closed) return false
+  if (child.points.length < 3 || parent.points.length < 3) return false
+  if (!(outlineArea(child) < outlineArea(parent) - 1)) return false
+  const ring = shapeOutline(parent)
+  return child.points.every((p) => pointInPolygon(p, ring) || onRing(p, ring))
+}
+
+/** Совпадающие по месту контуры — например проём и полотно яруса в нём. */
+function sameFootprint(a: Shape, b: Shape): boolean {
+  if (Math.abs(outlineArea(a) - outlineArea(b)) > 1) return false
+  const ca = centroid(a.points)
+  const cb = centroid(b.points)
+  return Math.hypot(ca.x - cb.x, ca.y - cb.y) < 1
+}
+
+/**
+ * Контуры, вырезанные в этой фигуре.
+ *
+ * Правило одно и чисто геометрическое: вырезает ЛЮБАЯ фигура, целиком лежащая
+ * внутри — вырез, вложенное полотно, ярус, неважно. Два полотна не могут
+ * занимать одно место, поэтому её вершины принадлежат и внешнему контуру:
+ * разбивка внешней фигуры обязана на них опираться.
+ *
+ * Берём только НЕПОСРЕДСТВЕННО вложенные: фигура внутри вложенной фигуры
+ * режет её, а не внешнюю.
+ */
+function holesOf(shape: Shape, all: Shape[]): Shape[] {
+  if (!shape.closed || shape.points.length < 3) return []
+  const inside = all.filter((s) => nestedIn(s, shape))
+  const direct = inside.filter((c) => !inside.some((o) => nestedIn(c, o)))
+  const out: Shape[] = []
+  for (const c of direct) {
+    if (out.some((o) => sameFootprint(o, c))) continue // одно место режем один раз
+    out.push(c)
+  }
+  return out
+}
+
+/** Вершины, которые может упоминать разбивка: контур, внутренние и углы вырезов. */
+function meshIndex(shape: Shape, all: Shape[]): Map<string, Point> {
+  const m = pointIndex(shape)
+  for (const h of holesOf(shape, all)) for (const p of h.points) m.set(p.id, p)
+  return m
+}
+
+/** Стороны, которые идут по контуру: и внешние стены, и обвод вырезов. */
+function contourKeys(shape: Shape, all: Shape[]): Set<string> {
+  const set = new Set<string>()
+  const ring = (pts: Point[]) => {
+    for (let i = 0; i < pts.length; i++) set.add(edgeKey(pts[i].id, pts[(i + 1) % pts.length].id))
+  }
+  if (shape.closed) ring(shape.points)
+  for (const h of holesOf(shape, all)) if (h.closed) ring(h.points)
+  return set
+}
+
+/** Подписи вершин для листа замера: контур — числами, углы выреза — В1, В2… */
+function labelIndex(shape: Shape, all: Shape[]): Map<string, string> {
+  const m = new Map<string, string>()
+  shapePoints(shape).forEach((p, i) => m.set(p.id, String(i + 1)))
+  let k = 0
+  for (const h of holesOf(shape, all)) for (const p of h.points) m.set(p.id, 'В' + String(++k))
+  return m
 }
 /** Все вершины фигуры: контур + внутренние точки замера. */
 function shapePoints(shape: Shape): Point[] {
@@ -110,10 +235,13 @@ function shapeEdges(shape: Shape): Edge[] {
     const a = shape.points[i]
     const b = shape.points[(i + 1) % n]
     const key = edgeKey(a.id, b.id)
+    const props = { ...DEFAULT_EDGE, ...shape.edgeProps[key] }
+    const chord = Math.hypot(a.x - b.x, a.y - b.y)
     out.push({
       key, shapeId: shape.id, a, b,
-      length: Math.hypot(a.x - b.x, a.y - b.y),
-      props: shape.edgeProps[key] ?? { garpun: true, seam: false },
+      length: props.bulge ? arcLength(a, b, props.bulge) : chord,
+      chord,
+      props,
     })
   }
   return out
@@ -133,6 +261,7 @@ export const useConfigurator = defineStore('configurator', {
       tool: 'select',
       drawShapeId: null,
       measureBaseKey: null,
+      hiddenLevels: [],
       triPreview: null,
       past: [],
       future: [],
@@ -149,23 +278,84 @@ export const useConfigurator = defineStore('configurator', {
     },
     // per-shape render info
     shapesView(state) {
-      return state.shapes.map((s) => ({
-        id: s.id,
-        closed: s.closed,
-        active: s.id === state.activeShapeId,
-        points: s.points,
-        inner: s.innerPoints,
-        shrunk: s.closed ? shrink(s.points, state.settings.usad) : [],
-      }))
+      return state.shapes.map((s) => {
+        const outline = shapeOutline(s, 64)
+        return {
+          id: s.id,
+          closed: s.closed,
+          active: s.id === state.activeShapeId,
+          kind: s.kind,
+          level: s.level,
+          drop: s.drop,
+          visible: !state.hiddenLevels.includes(s.level),
+          /** Площадь контура, мм² — по ней выбирается самая мелкая фигура под курсором. */
+          areaMm: outlineArea(s),
+          points: s.points,
+          inner: s.innerPoints,
+          /** Контур с разложенными дугами — им и рисуем заливку. */
+          outline,
+          /** Вырезы внутри этого полотна (их контуры тоже с дугами). */
+          holes: holesOf(s, state.shapes).map((h) => shapeOutline(h, 64)),
+          shrunk: s.closed
+            ? shrink(outline.map((p, i) => ({ id: 'o' + i, x: p.x, y: p.y })), state.settings.usad)
+            : [],
+        }
+      })
     },
     edges(state): Edge[] {
       return state.shapes.flatMap((s) => shapeEdges(s))
     },
+    /** Площадь полотен за вычетом вырезов, мм². */
     area(state): number {
-      return state.shapes.reduce((sum, s) => sum + (s.closed ? polygonArea(s.points) : 0), 0)
+      let total = 0
+      for (const s of state.shapes) {
+        if (s.kind !== 'ceiling') continue
+        total += outlineArea(s)
+        for (const h of holesOf(s, state.shapes)) total -= outlineArea(h)
+      }
+      return Math.max(0, total)
     },
-    perimeterMm(state): number {
-      return state.shapes.reduce((sum, s) => sum + perimeter(s.points, s.closed), 0)
+    /** Суммарная площадь вырезов, мм² — колонны, короба, проёмы под нижний ярус. */
+    holeArea(state): number {
+      let total = 0
+      for (const s of state.shapes) {
+        if (s.kind !== 'ceiling') continue
+        for (const h of holesOf(s, state.shapes)) total += outlineArea(h)
+      }
+      return total
+    },
+    /** Периметр всех контуров, включая обвод вырезов; дуги считаются по длине. */
+    perimeterMm(): number {
+      return (this.edges as Edge[]).reduce((sum, e) => sum + e.length, 0)
+    },
+    /** Разбивка по ярусам — каждый ярус это отдельное полотно. */
+    levelStats(state): {
+      level: number; drop: number; areaM2: number; perimeterM: number; pieces: number; visible: boolean
+    }[] {
+      const byLevel = new Map<number, { level: number; drop: number; area: number; perimeter: number; pieces: number }>()
+      const edges = this.edges as Edge[]
+      const perimeterOf = (id: string) => edges.filter((e) => e.shapeId === id).reduce((s, e) => s + e.length, 0)
+      for (const s of state.shapes) {
+        if (s.kind !== 'ceiling' || !s.closed) continue
+        const rec = byLevel.get(s.level) ?? { level: s.level, drop: s.drop, area: 0, perimeter: 0, pieces: 0 }
+        rec.area += outlineArea(s)
+        rec.perimeter += perimeterOf(s.id)
+        rec.pieces += 1
+        rec.drop = s.drop
+        for (const h of holesOf(s, state.shapes)) {
+          rec.area -= outlineArea(h)
+          rec.perimeter += perimeterOf(h.id) // обвод выреза тоже крепится
+        }
+        byLevel.set(s.level, rec)
+      }
+      return [...byLevel.values()]
+        .sort((a, b) => a.level - b.level)
+        .map((r) => ({
+          level: r.level, drop: r.drop, pieces: r.pieces,
+          areaM2: Math.max(0, r.area) / 1_000_000,
+          perimeterM: r.perimeter / 1000,
+          visible: !state.hiddenLevels.includes(r.level),
+        }))
     },
     diagonalList(): { fromId: string; toId: string; length: number }[] {
       const s = this.activeShape as Shape
@@ -203,11 +393,8 @@ export const useConfigurator = defineStore('configurator', {
     },
     /** total cut (usad) area across shapes, m² */
     cutAreaM2(state): number {
-      let mm = 0
-      for (const s of state.shapes) {
-        if (s.closed) mm += polygonArea(shrink(s.points, state.settings.usad))
-      }
-      return mm / 1_000_000
+      const k = 1 - state.settings.usad / 100
+      return ((this.area as number) * k * k) / 1_000_000
     },
     /** Стороны активной фигуры с номерами вершин — база для замера. */
     activeEdges(): (Edge & { i1: number; i2: number })[] {
@@ -226,10 +413,8 @@ export const useConfigurator = defineStore('configurator', {
         inner: { key: string; a: Point; b: Point }[]
       }[] = []
       for (const s of state.shapes) {
-        const byId = pointIndex(s)
-        const contour = new Set<string>()
-        const n = s.points.length
-        if (s.closed) for (let i = 0; i < n; i++) contour.add(edgeKey(s.points[i].id, s.points[(i + 1) % n].id))
+        const byId = meshIndex(s, state.shapes)
+        const contour = contourKeys(s, state.shapes)
         s.triangles.forEach((t, i) => {
           const a = byId.get(t.a); const b = byId.get(t.b); const c = byId.get(t.c)
           if (!a || !b || !c) return
@@ -247,11 +432,10 @@ export const useConfigurator = defineStore('configurator', {
     /** Таблица замера активной фигуры: по три стороны на треугольник. */
     measureRows(): { no: number; side: string; len: number; kind: 'Контур' | 'Диагональ'; area: number }[] {
       const s = this.activeShape as Shape
-      const byId = pointIndex(s)
-      const num = new Map(shapePoints(s).map((p, i) => [p.id, i + 1]))
-      const contour = new Set<string>()
-      const n = s.points.length
-      if (s.closed) for (let i = 0; i < n; i++) contour.add(edgeKey(s.points[i].id, s.points[(i + 1) % n].id))
+      const all = this.shapes as Shape[]
+      const byId = meshIndex(s, all)
+      const num = labelIndex(s, all)
+      const contour = contourKeys(s, all)
       const rows: { no: number; side: string; len: number; kind: 'Контур' | 'Диагональ'; area: number }[] = []
       s.triangles.forEach((t, i) => {
         const ids: [string, string][] = [[t.a, t.b], [t.b, t.c], [t.c, t.a]]
@@ -297,7 +481,64 @@ export const useConfigurator = defineStore('configurator', {
      */
     activeAreaM2(): number {
       const s = this.activeShape as Shape
-      return s && s.closed ? polygonArea(s.points) / 1_000_000 : 0
+      if (!s || !s.closed) return 0
+      let mm = outlineArea(s)
+      for (const h of holesOf(s, this.shapes as Shape[])) mm -= outlineArea(h)
+      return Math.max(0, mm) / 1_000_000
+    },
+    /**
+     * Площадь активной фигуры по хордам, без вырезов — с ней сверяется сумма
+     * треугольников: замер идёт по прямым, скругления считаются отдельно.
+     */
+    activeChordAreaM2(): number {
+      const s = this.activeShape as Shape
+      if (!s || !s.closed) return 0
+      let mm = polygonArea(s.points)
+      for (const h of holesOf(s, this.shapes as Shape[])) mm -= polygonArea(h.points)
+      return Math.max(0, mm) / 1_000_000
+    },
+    /**
+     * Разбивка устарела: контур или вырезы изменились после того, как её
+     * построили. Самая частая причина — фигуру нарисовали внутри уже
+     * размеченного полотна: сетка про неё не знает и идёт сквозь.
+     */
+    meshStale(): boolean {
+      const s = this.activeShape as Shape
+      if (!s || !s.triangles.length) return false
+      const cutters = holesOf(s, this.shapes as Shape[])
+      const used = new Set(s.triangles.flatMap((t) => [t.a, t.b, t.c]))
+      for (const h of cutters) {
+        for (const p of h.points) if (!used.has(p.id)) return true
+      }
+      const known = new Set([
+        ...shapePoints(s).map((p) => p.id),
+        ...cutters.flatMap((h) => h.points.map((p) => p.id)),
+      ])
+      for (const id of used) if (!known.has(id)) return true
+      return false
+    },
+    /** Сколько вырезов видит программа в активной фигуре. */
+    activeHoleCount(): number {
+      const s = this.activeShape as Shape
+      return s ? holesOf(s, this.shapes as Shape[]).length : 0
+    },
+    /** Самый нижний заведённый ярус. */
+    maxLevel(state): number {
+      return state.shapes.reduce((m, s) => Math.max(m, s.level), 1)
+    },
+    /** Скруглённые стороны активной фигуры — то, что мерят хордой и стрелкой. */
+    arcRows(): { side: string; chord: number; sagitta: number; radius: number; length: number }[] {
+      const s = this.activeShape as Shape
+      const num = new Map(s.points.map((p, i) => [p.id, i + 1]))
+      return (this.activeEdges as (Edge & { i1: number; i2: number })[])
+        .filter((e) => e.props.bulge)
+        .map((e) => ({
+          side: `${num.get(e.a.id) ?? '?'}–${num.get(e.b.id) ?? '?'}`,
+          chord: Math.round(e.chord),
+          sagitta: Math.round(arcSagitta(e.a, e.b, e.props.bulge)),
+          radius: Math.round(arcRadius(e.a, e.b, e.props.bulge)),
+          length: Math.round(e.length),
+        }))
     },
     /** Суммарная площадь по треугольникам, м² — контрольная цифра замера. */
     triangleAreaM2(): number {
@@ -507,7 +748,7 @@ export const useConfigurator = defineStore('configurator', {
       const shape = this._shapeOfEdge(key)
       if (!shape) return
       this.snapshot()
-      const cur = shape.edgeProps[key] ?? { garpun: true, seam: false }
+      const cur = { ...DEFAULT_EDGE, ...shape.edgeProps[key] }
       shape.edgeProps[key] = { ...cur, [prop]: value }
       this.persist()
     },
@@ -622,6 +863,126 @@ export const useConfigurator = defineStore('configurator', {
       s.innerPoints = s.innerPoints.map(flip)
       this.persist()
     },
+
+    // ---- слои (ярусы) ---------------------------------------------------
+    /** Прячет ярус с чертежа; активная фигура при этом уходит на видимый. */
+    setLevelVisible(level: number, visible: boolean) {
+      const hidden = new Set(this.hiddenLevels)
+      if (visible) hidden.delete(level)
+      else hidden.add(level)
+      this.hiddenLevels = [...hidden].sort((a, b) => a - b)
+      this._keepActiveVisible()
+      this.persist()
+    },
+    toggleLevelVisible(level: number) {
+      this.setLevelVisible(level, this.hiddenLevels.includes(level))
+    },
+    /** Показать только этот ярус. */
+    isolateLevel(level: number) {
+      this.hiddenLevels = (this.levelStats as { level: number }[])
+        .map((l) => l.level)
+        .filter((l) => l !== level)
+      this._keepActiveVisible()
+      this.persist()
+    },
+    /**
+     * Показать первые n ярусов по порядку — так многоярусный потолок
+     * разбирается по слоям: сначала основной, потом каждый следующий.
+     */
+    showUpToLevel(n: number) {
+      const levels = (this.levelStats as { level: number }[]).map((l) => l.level)
+      this.hiddenLevels = levels.slice(Math.max(1, n))
+      this._keepActiveVisible()
+      this.persist()
+    },
+    showAllLevels() {
+      this.hiddenLevels = []
+      this.persist()
+    },
+    _keepActiveVisible() {
+      const active = this._active()
+      if (active && !this.hiddenLevels.includes(active.level)) return
+      const next = this.shapes.find((s) => !this.hiddenLevels.includes(s.level))
+      if (next) {
+        this.activeShapeId = next.id
+        this.clearSelection()
+      }
+    },
+    /** Новый ярус: начинаем рисовать полотно следующего уровня с перепадом. */
+    addLevel(drop?: number) {
+      const level = (this.maxLevel as number) + 1
+      this.beginDraw()
+      const s = this.shapes.find((x) => x.id === this.drawShapeId)
+      if (s) {
+        s.level = level
+        s.drop = drop ?? (level - 1) * 100
+      }
+      this.showAllLevels()
+    },
+
+    /** Полотно или вырез. Вырез вычитается из контура, внутри которого лежит. */
+    setShapeKind(id: string, kind: ShapeKind) {
+      const s = this.shapes.find((x) => x.id === id)
+      if (!s || s.kind === kind) return
+      this.snapshot()
+      s.kind = kind
+      if (kind === 'hole') {
+        // у выреза нет собственного полотна — ярус берём у фигуры, в которой он лежит
+        const host = (this.shapes as Shape[])
+          .filter((x) => x.kind === 'ceiling' && nestedIn(s, x))
+          .sort((a, b) => outlineArea(a) - outlineArea(b))[0]
+        if (host) s.level = host.level
+      }
+      this.persist()
+    },
+    /** Ярус и его перепад вниз от основного уровня. */
+    setShapeLevel(id: string, level: number, drop?: number) {
+      const s = this.shapes.find((x) => x.id === id)
+      if (!s) return
+      this.snapshot()
+      s.level = Math.max(1, Math.round(level))
+      if (drop !== undefined) s.drop = Math.max(0, Math.round(drop))
+      this.persist()
+    },
+    setShapeDrop(id: string, drop: number) {
+      const s = this.shapes.find((x) => x.id === id)
+      if (!s) return
+      this.snapshot()
+      s.drop = Math.max(0, Math.round(drop))
+      this.persist()
+    },
+
+    /** Скругление стороны напрямую (bulge = tan(θ/4)). */
+    setEdgeBulge(key: string, bulge: number, record = true) {
+      const shape = this._shapeOfEdge(key)
+      if (!shape) return
+      if (record) this.snapshot()
+      const cur = { ...DEFAULT_EDGE, ...shape.edgeProps[key] }
+      shape.edgeProps[key] = { ...cur, bulge: Math.max(-4, Math.min(4, bulge || 0)) }
+      this._touchMeasure(shape)
+      if (record) this.persist()
+    },
+    /** Скругление по замеру «стрелка от хорды», мм. */
+    setEdgeSagitta(key: string, sagitta: number) {
+      const e = (this.edges as Edge[]).find((x) => x.key === key)
+      if (!e) return
+      const sign = e.props.bulge < 0 ? -1 : 1
+      this.setEdgeBulge(key, bulgeFromSagitta(e.chord, Math.abs(sagitta)) * sign)
+    },
+    /** Скругление по радиусу, мм. */
+    setEdgeRadius(key: string, radius: number) {
+      const e = (this.edges as Edge[]).find((x) => x.key === key)
+      if (!e) return
+      const sign = e.props.bulge < 0 ? -1 : 1
+      this.setEdgeBulge(key, bulgeFromRadius(e.chord, Math.abs(radius)) * sign)
+    },
+    /** Перекинуть дугу на другую сторону хорды. */
+    flipEdgeArc(key: string) {
+      const e = (this.edges as Edge[]).find((x) => x.key === key)
+      if (!e || !e.props.bulge) return
+      this.setEdgeBulge(key, -e.props.bulge)
+    },
+    straightenEdge(key: string) { this.setEdgeBulge(key, 0) },
 
     updateSettings(patch: Partial<Settings>) { this.settings = { ...this.settings, ...patch }; this.persist() },
     updateOrder(patch: Partial<Order>) { this.order = { ...this.order, ...patch }; this.persist() },
@@ -749,6 +1110,9 @@ export const useConfigurator = defineStore('configurator', {
       const shape = this._shapeOfEdge(baseKey)
       if (!shape) return { err: 'Пристраивать можно только к внешним сторонам контура' }
       if (!shape.triangles.length) return { err: 'Фигура не разбита на треугольники' }
+      if (holesOf(shape, this.shapes as Shape[]).length) {
+        return { err: 'В полотне есть вырез: пользуйтесь кнопкой «Разбить фигуру на треугольники»' }
+      }
       const e = shapeEdges(shape).find((x) => x.key === baseKey)
       if (!e) return { err: 'Эта сторона уже внутри фигуры — пристраивать можно только к внешним' }
       const err = triangleError(e.length, fromA, fromB)
@@ -876,15 +1240,26 @@ export const useConfigurator = defineStore('configurator', {
     triangulateActive(): string | null {
       const s = this._active()
       if (!s.closed || s.points.length < 3) return 'Разбить можно только замкнутую фигуру'
-      const tri = earClip(s.points)
+
+      // вырез вшиваем в контур мостом: иначе треугольники пройдут сквозь дыру,
+      // а замерщику нужно, чтобы они упирались в её углы
+      const holes = holesOf(s, this.shapes as Shape[])
+      const ring = bridgeHoles(
+        s.points.map((p) => ({ id: p.id, x: p.x, y: p.y })),
+        holes.map((h) => h.points.map((p) => ({ id: p.id, x: p.x, y: p.y }))),
+      )
+      if (!ring) return 'Не удалось обойти вырез — проверьте, что он целиком внутри полотна'
+
+      const tri = earClip(ring)
       if (!tri.length) return 'Контур самопересекающийся — разбить не удалось'
       this.snapshot()
-      const byId = new Map(s.points.map((p) => [p.id, p]))
+      const byId = new Map(ring.map((p) => [p.id, p]))
       s.measureDirty = false
-      s.triangles = tri.map(([i, j, k]) => orientTri(
-        { id: newId(), a: s.points[i].id, b: s.points[j].id, c: s.points[k].id } as Triangle,
-        (id) => byId.get(id),
-      ))
+      s.triangles = tri
+        .map(([i, j, k]) => [ring[i].id, ring[j].id, ring[k].id])
+        // мост дублирует вершину контура и вершину выреза — вырожденное отбрасываем
+        .filter(([a, b, c]) => a !== b && b !== c && a !== c)
+        .map(([a, b, c]) => orientTri({ id: newId(), a, b, c } as Triangle, (id) => byId.get(id)))
       this.persist()
       return null
     },
@@ -918,6 +1293,7 @@ export const useConfigurator = defineStore('configurator', {
         settings: { ...this.settings },
         order: { ...this.order },
         pricing: { ...this.pricing },
+        hiddenLevels: [...this.hiddenLevels],
       }
       return JSON.stringify(model)
     },
@@ -927,6 +1303,12 @@ export const useConfigurator = defineStore('configurator', {
           if (!Array.isArray(s.triangles)) s.triangles = []
           if (!Array.isArray(s.innerPoints)) s.innerPoints = []
           if (typeof s.measureDirty !== 'boolean') s.measureDirty = false
+          if (s.kind !== 'hole') s.kind = 'ceiling'
+          if (!(s.level >= 1)) s.level = 1
+          if (!(s.drop >= 0)) s.drop = 0
+          for (const k of Object.keys(s.edgeProps ?? {})) {
+            s.edgeProps[k] = { ...DEFAULT_EDGE, ...s.edgeProps[k] }
+          }
         }
         this.shapes = model.shapes
         this.activeShapeId = model.activeShapeId && model.shapes.some((s) => s.id === model.activeShapeId)
@@ -935,6 +1317,7 @@ export const useConfigurator = defineStore('configurator', {
       if (model.settings) this.settings = { ...this.settings, ...model.settings }
       if (model.order) this.order = { ...this.order, ...model.order }
       if (model.pricing) this.pricing = { ...this.pricing, ...model.pricing }
+      this.hiddenLevels = Array.isArray(model.hiddenLevels) ? model.hiddenLevels : []
       // инструмент и выделение — эфемерны: приложение всегда открывается в «Выборе»
       if (model.tool && TOOLS.includes(model.tool as Tool)) this.tool = model.tool as Tool
     },
@@ -952,3 +1335,12 @@ export const useConfigurator = defineStore('configurator', {
     },
   },
 })
+
+/**
+ * Горячая замена стора. Без неё Vite обновлял компоненты, а экземпляр стора
+ * оставался прежним — со старыми геттерами и действиями. Выглядело так, будто
+ * правки логики не применяются, пока не перезагрузишь страницу руками.
+ */
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useConfigurator, import.meta.hot))
+}

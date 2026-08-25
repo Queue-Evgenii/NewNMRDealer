@@ -6,7 +6,7 @@ import { useConfigurator } from '../stores/configurator'
 
 const store = useConfigurator()
 const { activeShape, activeEdges, measureBaseKey, measureRows, triangleAreaM2, activeAreaM2,
-  triPreview, triangleQuality } = storeToRefs(store)
+  activeChordAreaM2, arcRows, triPreview, triangleQuality, meshStale, activeHoleCount } = storeToRefs(store)
 
 const hasTriangles = computed(() => activeShape.value.triangles.length > 0)
 const triCount = computed(() => activeShape.value.triangles.length)
@@ -23,6 +23,10 @@ function buildFirst() {
 }
 
 function splitCurrent() {
+  err0.value = store.triangulateActive() ?? ''
+}
+function resplit() {
+  store.clearTriangles()
   err0.value = store.triangulateActive() ?? ''
 }
 
@@ -71,12 +75,18 @@ const triList = computed(() => {
 
 const areaM2 = computed(() => activeAreaM2.value.toFixed(3))
 const triAreaM2 = computed(() => triangleAreaM2.value.toFixed(3))
-const areaMatches = computed(() => Math.abs(triangleAreaM2.value - activeAreaM2.value) < 0.001)
+// треугольники кроют многоугольник по хордам, скругления считаются отдельно
+const areaMatches = computed(() => Math.abs(triangleAreaM2.value - activeChordAreaM2.value) < 0.001)
+const arcExtra = computed(() => activeAreaM2.value - activeChordAreaM2.value)
 
 function csv(): string {
-  const head = '№ треугольника;Сторона;Длина, мм;Тип'
-  const body = measureRows.value.map((r) => `${r.no};${r.side};${r.len};${r.kind}`)
-  return [head, ...body].join('\r\n')
+  const lines = ['№ треугольника;Сторона;Длина, мм;Тип']
+  lines.push(...measureRows.value.map((r) => `${r.no};${r.side};${r.len};${r.kind}`))
+  if (arcRows.value.length) {
+    lines.push('', 'Скругления;Сторона;Хорда, мм;Стрелка, мм;Радиус, мм;Длина дуги, мм')
+    lines.push(...arcRows.value.map((r) => `;${r.side};${r.chord};${r.sagitta};${r.radius};${r.length}`))
+  }
+  return lines.join('\r\n')
 }
 function exportCsv() {
   const blob = new Blob(['﻿' + csv()], { type: 'text/csv;charset=utf-8' })
@@ -148,6 +158,16 @@ function copyCsv() {
       <p v-else-if="previewHint" class="ok">{{ previewHint }}</p>
     </section>
 
+    <!-- разбивка не знает про вырез -->
+    <section v-if="meshStale" class="warn-box">
+      <p>
+        Разбивка построена до того, как контур изменился: вырезы и вложенные фигуры в неё
+        не вошли, треугольники идут сквозь них. Сумма треугольников не сойдётся с площадью.
+      </p>
+      <button class="primary" @click="resplit">Разбить заново</button>
+      <p v-if="err0" class="err">{{ err0 }}</p>
+    </section>
+
     <!-- размеры правили руками -->
     <section v-if="dirty" class="warn-box">
       <p>Геометрию двигали вручную — длины ниже больше не те, что диктовал замерщик.</p>
@@ -168,16 +188,38 @@ function copyCsv() {
         </li>
       </ul>
       <p class="legend">* — диагональ · градусы — самый острый угол треугольника</p>
+      <div class="stat"><span>Вырезов в фигуре</span>
+        <b :class="{ warn: activeHoleCount === 0 }">{{ activeHoleCount }}</b></div>
+      <p v-if="activeHoleCount" class="legend">Их углы входят в разбивку — треугольники обходят вырез.</p>
       <p v-if="weak.length" class="warn">
         Узкие треугольники: {{ weak.map((w) => '△' + w.no).join(', ') }}. В них ошибка рулетки
         бьёт по вершине до ×{{ Math.max(...weak.map((w) => w.factor)).toFixed(1) }} —
         такие места лучше перемерить, взяв основанием другую сторону.
       </p>
       <div class="stat"><span>Сумма треугольников</span><b>{{ triAreaM2 }} м²</b></div>
-      <div class="stat"><span>Площадь фигуры</span>
-        <b :class="{ warn: !areaMatches }">{{ areaM2 }} м²</b></div>
+      <div class="stat"><span>Площадь по хордам</span>
+        <b :class="{ warn: !areaMatches }">{{ activeChordAreaM2.toFixed(3) }} м²</b></div>
+      <div v-if="Math.abs(arcExtra) > 0.0005" class="stat">
+        <span>Скругления</span><b>{{ arcExtra > 0 ? '+' : '' }}{{ arcExtra.toFixed(3) }} м²</b></div>
+      <div v-if="Math.abs(arcExtra) > 0.0005" class="stat"><span>Итого фигура</span><b>{{ areaM2 }} м²</b></div>
+      <button @click="resplit">Разбить заново по чертежу</button>
+      <p v-if="err0 && !meshStale" class="err">{{ err0 }}</p>
       <button @click="store.removeLastTriangle()">Убрать последний</button>
       <button class="danger" @click="store.clearTriangles()">Сбросить разбивку</button>
+    </section>
+
+    <!-- скругления -->
+    <section v-if="arcRows.length">
+      <h3>Скругления ({{ arcRows.length }})</h3>
+      <table class="measure">
+        <thead><tr><th>Сторона</th><th>Хорда</th><th>Стрелка</th><th>R</th></tr></thead>
+        <tbody>
+          <tr v-for="(r, i) in arcRows" :key="i">
+            <td>{{ r.side }}</td><td>{{ r.chord }}</td><td>{{ r.sagitta }}</td><td>{{ r.radius }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="legend">Дугу мерят хордой и стрелкой — от середины хорды до стены.</p>
     </section>
 
     <!-- таблица замера -->
@@ -220,6 +262,7 @@ input[type='number'], select {
 .err { margin: 8px 0 0; font-size: 12px; color: #ff9b9b; line-height: 1.4; }
 .warn-box { background: #2a2113; border: 1px solid #5a4520; border-radius: 8px; padding: 10px 12px; }
 .warn-box p { margin: 0; font-size: 12px; color: #ffd8a8; line-height: 1.45; }
+.warn-box button.primary { background: #2f6fed; border-color: #2f6fed; color: #fff; }
 .ok { margin: 8px 0 0; font-size: 12px; color: #4fd08a; line-height: 1.4; }
 .warn { margin: 8px 0 0; font-size: 12px; color: #ffc078; line-height: 1.45; }
 .tris { list-style: none; margin: 0 0 6px; padding: 0; max-height: 190px; overflow-y: auto; }

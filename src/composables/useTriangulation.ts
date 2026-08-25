@@ -191,9 +191,16 @@ export function earClip(pts: XY[]): [number, number, number][] {
       const c = pts[i2]
       if (cross3(a, b, c) <= 0) continue // вогнутая вершина — не «ухо»
       let free = true
-      for (const j of idx) {
+      for (let q = 0; q < idx.length; q++) {
+        const j = idx[q]
         if (j === i0 || j === i1 || j === i2) continue
-        if (insideDepth(pts[j], a, b, c) > -0.01) { free = false; break }
+        // мешают только вогнутые вершины: выпуклая внутрь уха попасть не может.
+        // Проверять все подряд нельзя — после вшивания выреза мостом его вершины
+        // лежат ровно на границе уха и блокировали бы любое ухо.
+        const prev = pts[idx[(q - 1 + idx.length) % idx.length]]
+        const next = pts[idx[(q + 1) % idx.length]]
+        if (cross3(prev, pts[j], next) > 0) continue
+        if (insideDepth(pts[j], a, b, c) > 0.001) { free = false; break }
       }
       if (!free) continue
       const score = minAngleOf(a, b, c)
@@ -266,6 +273,93 @@ export function delaunayFlip(tris: [number, number, number][], pts: XY[]): [numb
     if (!flipped) break
   }
   return t
+}
+
+/** Расстояние от точки до отрезка — нужно, чтобы мост не задевал чужие вершины. */
+function distToSeg(p: XY, a: XY, b: XY): number {
+  const abx = b.x - a.x
+  const aby = b.y - a.y
+  const len2 = abx * abx + aby * aby || 1
+  let t = ((p.x - a.x) * abx + (p.y - a.y) * aby) / len2
+  t = Math.max(0, Math.min(1, t))
+  return Math.hypot(p.x - (a.x + abx * t), p.y - (a.y + aby * t))
+}
+
+/**
+ * Соединяет вырез с внешним контуром «мостом» — двойным разрезом от вершины
+ * контура к вершине выреза. Многоугольник с дыркой превращается в обычный
+ * простой контур, который уже можно резать на уши.
+ *
+ * Мост ищем самый короткий из тех, что не пересекают ни одной стороны и идут
+ * внутри полотна. Так треугольники обязательно упираются в углы выреза,
+ * а не проходят сквозь него.
+ */
+export function bridgeHoles<T extends XY>(outer: T[], holes: T[][]): T[] | null {
+  let ring: T[] = outer.slice()
+  if (signedArea2(ring) < 0) ring.reverse()
+
+  for (const raw of holes) {
+    if (raw.length < 3) continue
+    const hole = raw.slice()
+    if (signedArea2(hole) > 0) hole.reverse() // вырез обходим в обратную сторону
+
+    const bridge = findBridge(ring, hole)
+    if (!bridge) return null
+    const { i, j } = bridge
+    ring = [
+      ...ring.slice(0, i + 1),
+      ...hole.slice(j), ...hole.slice(0, j + 1),
+      ...ring.slice(i),
+    ]
+  }
+  return ring
+}
+
+function findBridge<T extends XY>(ring: T[], hole: T[]): { i: number; j: number } | null {
+  let best: { i: number; j: number; d: number } | null = null
+  for (let i = 0; i < ring.length; i++) {
+    for (let j = 0; j < hole.length; j++) {
+      const a = ring[i]
+      const b = hole[j]
+      const d = Math.hypot(a.x - b.x, a.y - b.y)
+      if (best && d >= best.d) continue
+      if (!bridgeIsClear(a, b, ring, hole)) continue
+      best = { i, j, d }
+    }
+  }
+  return best ? { i: best.i, j: best.j } : null
+}
+
+function bridgeIsClear<T extends XY>(a: XY, b: XY, ring: T[], hole: T[]): boolean {
+  const eps = 1e-6
+  const chord = Math.hypot(b.x - a.x, b.y - a.y)
+  if (chord < eps) return false
+  const touches = (p: XY) => (Math.hypot(p.x - a.x, p.y - a.y) < eps || Math.hypot(p.x - b.x, p.y - b.y) < eps)
+
+  for (const poly of [ring, hole]) {
+    for (let k = 0; k < poly.length; k++) {
+      const p = poly[k]
+      const q = poly[(k + 1) % poly.length]
+      if (properIntersect(a, b, p, q)) return false
+      // мост не должен ложиться на чужую вершину — иначе получим вырожденное ухо
+      if (!touches(p) && distToSeg(p, a, b) < chord * 1e-6) return false
+    }
+  }
+  // середина моста обязана лежать внутри полотна и снаружи выреза
+  const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+  if (!insidePolygon(mid, ring)) return false
+  if (insidePolygon(mid, hole)) return false
+  return true
+}
+
+function insidePolygon(p: XY, pts: XY[]): boolean {
+  let inside = false
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const a = pts[i]
+    const b = pts[j]
+    if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside
+  }
+  return inside
 }
 
 export interface TriIds { a: string; b: string; c: string }

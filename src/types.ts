@@ -12,6 +12,8 @@ export interface Point {
 export interface EdgeProps {
   garpun: boolean // гарпун по стороне
   seam: boolean   // шов / спайка
+  /** Скругление стороны: bulge = tan(θ/4); 0 — прямая. Стрелка = хорда*bulge/2. */
+  bulge: number
 }
 
 export interface Edge {
@@ -19,7 +21,10 @@ export interface Edge {
   shapeId: string
   a: Point
   b: Point
-  length: number // mm
+  /** Длина стороны по факту: у скруглённой — длина дуги, мм. */
+  length: number
+  /** Прямое расстояние между концами (хорда), мм. */
+  chord: number
   props: EdgeProps
 }
 
@@ -33,6 +38,12 @@ export interface Triangle {
   b: string
   c: string
 }
+
+/**
+ * Роль контура: полотно яруса или вырез в нём (колонна, короб, проём под
+ * нижний ярус). Вырез вычитается из площади того яруса, внутри которого лежит.
+ */
+export type ShapeKind = 'ceiling' | 'hole'
 
 /** One independent closed/open contour on the canvas (a separate ceiling piece). */
 export interface Shape {
@@ -49,6 +60,12 @@ export interface Shape {
   innerPoints: Point[]
   /** Геометрию правили руками после замера — длины больше не те, что диктовали. */
   measureDirty: boolean
+  /** Полотно или вырез в нём. */
+  kind: ShapeKind
+  /** Номер яруса: 1 — основной потолок, дальше вниз. */
+  level: number
+  /** Перепад яруса вниз от основного уровня, мм (для 3D и спецификации). */
+  drop: number
 }
 
 export interface Diagonal {
@@ -98,6 +115,7 @@ export interface SerializedModel {
   order?: Order
   pricing?: Pricing
   tool?: string
+  hiddenLevels?: number[]
   selectedPointId?: string | null
   selectedEdgeKey?: string | null
 }
