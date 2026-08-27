@@ -152,18 +152,55 @@ const handleEdges = computed(() => {
   const minPx = coarse ? 76 : 54
   return activeEdges.value.filter((e) => e.length / mmPerPx.value > minPx)
 })
-/** Прямая сторона: ручка врезает новый угол. */
+/** Прямая сторона: ручка врезает новый угол; под курсором едет по стороне. */
 const midHandles = computed(() =>
-  handleEdges.value.filter((e) => !e.props.bulge).map((e) => ({ key: e.key, ...mid(e.a, e.b) })))
+  handleEdges.value.filter((e) => !e.props.bulge).map((e) => {
+    const h = hoverEdge.value
+    return h && h.key === e.key ? { key: e.key, x: h.x, y: h.y } : { key: e.key, ...mid(e.a, e.b) }
+  }))
 /** Скруглённая сторона: ручка сидит на дуге и тянет кривизну. */
 const arcHandles = computed(() =>
   handleEdges.value.filter((e) => e.props.bulge)
     .map((e) => ({ key: e.key, ...arcMidpoint(e.a, e.b, e.props.bulge) })))
 
+/**
+ * Точка на стороне под курсором. В «Выборе» ручка «+» едет по стороне за
+ * курсором — видно, куда встанет новый угол. В «Рисовать» это подсказка
+ * привязки: новая точка ляжет ровно на существующую стену.
+ */
+const hoverEdge = ref<{ key: string; x: number; y: number } | null>(null)
+
+function projectOnEdge(m: { x: number; y: number }, a: Point, b: Point) {
+  const abx = b.x - a.x; const aby = b.y - a.y
+  const len2 = abx * abx + aby * aby || 1
+  let t = ((m.x - a.x) * abx + (m.y - a.y) * aby) / len2
+  // к самым концам не липнем — там вершины, а не место для новой точки
+  const pad = Math.min(0.25, px(HIT_VERTEX) / Math.sqrt(len2))
+  t = Math.max(pad, Math.min(1 - pad, t))
+  const x = a.x + abx * t
+  const y = a.y + aby * t
+  return { x, y, d: Math.hypot(m.x - x, m.y - y) }
+}
+
+/** Ищет сторону под курсором среди тех, куда вообще можно врезать точку. */
+function findHoverEdge(m: { x: number; y: number }) {
+  const list = tool.value === 'draw'
+    ? visibleEdges.value
+    : activeEdges.value.filter((e) => !e.props.bulge)
+  const thr = px(tool.value === 'draw' ? (coarse ? 20 : 14) : HIT_EDGE * 1.4)
+  let best: { key: string; x: number; y: number; d: number } | null = null
+  for (const e of list) {
+    if (e.props.bulge) continue // у дуги своя ручка — кривизны
+    const pr = projectOnEdge(m, e.a, e.b)
+    if (pr.d <= thr && (!best || pr.d < best.d)) best = { key: e.key, x: pr.x, y: pr.y, d: pr.d }
+  }
+  hoverEdge.value = best ? { key: best.key, x: best.x, y: best.y } : null
+}
+
 // ---- hit-тест ------------------------------------------------------------
 type Hit =
   | { kind: 'vertex'; id: string; shapeId: string }
-  | { kind: 'mid'; key: string }
+  | { kind: 'mid'; key: string; x: number; y: number }
   | { kind: 'arc'; key: string }
   | { kind: 'edge'; key: string; shapeId: string }
   | { kind: 'shape'; shapeId: string }
@@ -215,7 +252,7 @@ function hitTest(m: { x: number; y: number }): Hit {
     if (Math.hypot(h.x - m.x, h.y - m.y) <= thrM) return { kind: 'arc', key: h.key }
   }
   for (const h of midHandles.value) {
-    if (Math.hypot(h.x - m.x, h.y - m.y) <= thrM) return { kind: 'mid', key: h.key }
+    if (Math.hypot(h.x - m.x, h.y - m.y) <= thrM) return { kind: 'mid', key: h.key, x: h.x, y: h.y }
   }
 
   // 3. сторона (у скруглённой меряем расстояние до самой дуги)
@@ -317,6 +354,9 @@ function snapNew(m: { x: number; y: number }) {
   for (const p of visiblePoints.value) {
     if (Math.hypot(p.x - m.x, p.y - m.y) <= thr) return { x: p.x, y: p.y }
   }
+  // на стену существующей фигуры — то, что показывает кружок под курсором
+  const h = hoverEdge.value
+  if (h) return { x: Math.round(h.x), y: Math.round(h.y) }
   const g = settings.value.gridStep || 1
   return { x: Math.round(m.x / g) * g, y: Math.round(m.y / g) * g }
 }
@@ -423,7 +463,7 @@ let pinch: { dist: number; zoom: number } | null = null
 let spaceDown = false
 
 watch(tool, () => {
-  guideX.value = null; guideY.value = null; weldTarget.value = null
+  guideX.value = null; guideY.value = null; weldTarget.value = null; hoverEdge.value = null
   press = null
   cursorMm.value = null
   if (tool.value !== 'ruler') rulerPts.value = []
@@ -449,7 +489,7 @@ function beginDrag(p: Press) {
   if (tool.value !== 'select' || spaceDown) { p.mode = 'pan'; return }
 
   if (p.hit.kind === 'mid') {
-    const id = store.insertOnEdge(p.hit.key) // ручка сразу становится вершиной
+    const id = store.insertOnEdge(p.hit.key, p.hit) // ручка сразу становится вершиной
     if (!id) { p.mode = 'pan'; return }
     p.hit = { kind: 'vertex', id, shapeId: store.activeShapeId }
     p.mode = 'point'
@@ -492,7 +532,10 @@ function onPointerMove(ev: PointerEvent) {
   if (pinch && pointers.size >= 2) { updatePinch(); return }
 
   if (!press) {
-    if (tool.value === 'draw') cursorMm.value = clientToMm(ev.clientX, ev.clientY)
+    const m = clientToMm(ev.clientX, ev.clientY)
+    if (tool.value === 'draw') cursorMm.value = m
+    if (tool.value === 'draw' || tool.value === 'select') findHoverEdge(m)
+    else hoverEdge.value = null
     return
   }
   if (ev.pointerId !== press.id) return
@@ -500,6 +543,7 @@ function onPointerMove(ev: PointerEvent) {
   if (!press.moved) {
     if (Math.hypot(ev.clientX - press.cx, ev.clientY - press.cy) < TAP_SLOP) return
     press.moved = true
+    hoverEdge.value = null
     beginDrag(press)
   }
 
@@ -569,7 +613,7 @@ function onTap(hit: Hit, mm: { x: number; y: number }) {
   // «Выбор»
   if (hit.kind === 'vertex') store.selectPoint(hit.id)
   else if (hit.kind === 'edge') store.selectEdge(hit.key)
-  else if (hit.kind === 'mid') store.insertOnEdge(hit.key)
+  else if (hit.kind === 'mid') store.insertOnEdge(hit.key, hit)
   else if (hit.kind === 'arc') store.selectEdge(hit.key)
   else if (hit.kind === 'shape') store.selectShape(hit.shapeId)
   else store.clearSelection()
@@ -773,6 +817,11 @@ onBeforeUnmount(() => {
       }]"
       :stroke-width="thinW * 1.5" />
 
+    <!-- при рисовании: сюда сядет точка, если поставить её на стену.
+         Рисуем последним слоем, иначе сама стена проходит по кружку. -->
+    <circle v-if="tool === 'draw' && hoverEdge" :cx="hoverEdge.x" :cy="hoverEdge.y"
+      :r="vertexR" class="edge-hint" :stroke-width="thinW * 2" />
+
     <!-- цель сварки -->
     <circle v-if="weldTarget" :cx="weldTarget.x" :cy="weldTarget.y" :r="vertexR * 2"
       class="weld" :stroke-width="thinW * 2" />
@@ -828,6 +877,7 @@ onBeforeUnmount(() => {
 .vertex.inner { fill: #0f1420; stroke: #7fd6ff; }
 .weld { fill: none; stroke: #4fd08a; }
 .mid-handle { fill: rgba(20, 32, 56, 0.9); stroke: #4a5f8a; }
+.edge-hint { fill: #12203a; stroke: #7fd6ff; }
 .arc-handle { fill: rgba(255, 167, 38, 0.25); stroke: #ffa726; }
 .hole-fill { fill: rgba(15, 20, 32, 0.85); stroke: none; }
 .mid-plus { stroke: #9fb3d6; }

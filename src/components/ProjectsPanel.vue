@@ -13,14 +13,16 @@ const { ordered, currentId } = storeToRefs(projects)
 
 const editingId = ref('')
 const editName = ref('')
-const nameInput = ref<HTMLInputElement | null>(null)
+// ref внутри v-for Vue собирает в МАССИВ, даже если строка редактируется одна
+const nameInput = ref<HTMLInputElement | HTMLInputElement[] | null>(null)
 
 async function startRename(id: string, name: string) {
   editingId.value = id
   editName.value = name
   await nextTick()
-  nameInput.value?.focus()
-  nameInput.value?.select()
+  const el = Array.isArray(nameInput.value) ? nameInput.value[0] : nameInput.value
+  el?.focus()
+  el?.select()
 }
 function commitRename() {
   if (editingId.value) projects.rename(editingId.value, editName.value)
@@ -75,17 +77,17 @@ function when(ts: number): string {
           <div class="row sub">
             <span class="muted">{{ p.areaM2 ? p.areaM2.toFixed(2) + ' м²' : 'пусто' }}</span>
             <span v-if="p.client" class="muted client">{{ p.client }}</span>
-          </div>
-          <div class="acts">
-            <button title="Переименовать" @click.stop="startRename(p.id, p.name)">
-              <IconRename :size="14" :stroke-width="1.75" />
-            </button>
-            <button title="Дубликат" @click.stop="projects.duplicate(p.id)">
-              <IconCopy :size="14" :stroke-width="1.75" />
-            </button>
-            <button class="danger" title="Удалить проект" @click.stop="removeProject(p.id, p.name)">
-              <IconDelete :size="14" :stroke-width="1.75" />
-            </button>
+            <div class="acts">
+              <button title="Переименовать" @click.stop="startRename(p.id, p.name)">
+                <IconRename :size="14" :stroke-width="1.75" />
+              </button>
+              <button title="Дубликат" @click.stop="projects.duplicate(p.id)">
+                <IconCopy :size="14" :stroke-width="1.75" />
+              </button>
+              <button class="danger" title="Удалить проект" @click.stop="removeProject(p.id, p.name)">
+                <IconDelete :size="14" :stroke-width="1.75" />
+              </button>
+            </div>
           </div>
         </template>
       </li>
@@ -111,21 +113,21 @@ function when(ts: number): string {
 
 .list { flex: 1; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 6px; }
 .list li {
-  position: relative; padding: 8px 10px; margin-bottom: 3px;
+  padding: 8px 10px; margin-bottom: 3px;
   border-radius: 8px; cursor: pointer; border: 1px solid transparent;
 }
 .list li:hover { background: #141d31; }
 .list li.on { background: #16274a; border-color: #2f6fed; }
 
-.row { display: flex; align-items: baseline; gap: 8px; }
-.row.sub { margin-top: 2px; }
-.name { flex: 1; font-size: 13px; color: #dbe6ff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.row.sub { align-items: center; margin-top: 3px; min-height: 24px; }
+.name { flex: 1; min-width: 0; font-size: 13px; color: #dbe6ff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .when { font-size: 11px; color: #55637f; flex: 0 0 auto; }
 .muted { font-size: 11px; color: #7f90b0; }
 .client { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.acts { display: none; position: absolute; right: 6px; bottom: 6px; gap: 2px; }
-.list li:hover .acts, .list li.on .acts { display: flex; }
+.acts { display: flex; gap: 2px; margin-left: auto; flex: 0 0 auto; visibility: hidden; }
+.list li:hover .acts, .list li.on .acts { visibility: visible; }
 .acts button {
   display: flex; align-items: center; justify-content: center;
   width: 24px; height: 24px; padding: 0; border-radius: 6px; cursor: pointer;
@@ -141,7 +143,7 @@ function when(ts: number): string {
 
 /* на телефоне действия всегда видны — наведения нет */
 @media (pointer: coarse) {
-  .acts { display: flex; position: static; margin-top: 6px; }
+  .acts { visibility: visible; }
   .acts button { width: 30px; height: 30px; }
 }
 </style>

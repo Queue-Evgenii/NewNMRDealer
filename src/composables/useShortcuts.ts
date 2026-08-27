@@ -2,8 +2,11 @@ import { onMounted, onBeforeUnmount } from 'vue'
 import { useConfigurator } from '../stores/configurator'
 
 /**
- * Горячие клавиши. Раскладка как в редакторах: буква — режим, Esc — выход,
- * Enter — подтвердить. Игнорируются, пока курсор в поле ввода.
+ * Горячие клавиши.
+ *
+ * Смотрим на `event.code` — физическую клавишу, а не на `event.key`. В русской
+ * раскладке та же клавиша даёт «я» вместо «z», и сравнение по символу молча
+ * ломало всё: ни Ctrl+Z, ни переключение режимов не работали.
  */
 export function useShortcuts() {
   const store = useConfigurator()
@@ -18,36 +21,38 @@ export function useShortcuts() {
   function onKey(e: KeyboardEvent) {
     if (isTyping(e.target)) return
     const ctrl = e.ctrlKey || e.metaKey
-    const k = e.key.toLowerCase()
+    const code = e.code
 
-    if (ctrl && k === 'z' && !e.shiftKey) { e.preventDefault(); store.undo(); return }
-    if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); store.redo(); return }
-    if (ctrl) return
+    if (ctrl && code === 'KeyZ' && !e.shiftKey) { e.preventDefault(); store.undo(); return }
+    if (ctrl && (code === 'KeyY' || (code === 'KeyZ' && e.shiftKey))) { e.preventDefault(); store.redo(); return }
+    if (ctrl) return // остальные сочетания оставляем браузеру
 
     // режим «Рисовать» перехватывает подтверждение и откат точки
     if (store.tool === 'draw') {
-      if (k === 'enter') { e.preventDefault(); store.finishDraw(true); return }
-      if (k === 'backspace') { e.preventDefault(); store.undoDrawPoint(); return }
-      if (k === 'escape') { e.preventDefault(); store.finishDraw(false); return }
+      if (code === 'Enter' || code === 'NumpadEnter') { e.preventDefault(); store.finishDraw(true); return }
+      if (code === 'Backspace') { e.preventDefault(); store.undoDrawPoint(); return }
+      if (code === 'Escape') { e.preventDefault(); store.finishDraw(false); return }
     }
 
-    switch (k) {
-      case 'delete':
-      case 'backspace': e.preventDefault(); store.deleteSelected(); break
-      case 'escape': store.clearSelection(); break
-      case 'v': store.setTool('select'); break
-      case 'd':
-      case 'p': store.setTool('draw'); break
-      case 'r': store.setTool('ruler'); break
-      case 't': store.setTool('measure'); break
-      case 'g': store.updateSettings({ showGrid: !store.settings.showGrid }); break
-      case 'm': store.updateSettings({ showMeasures: !store.settings.showMeasures }); break
-      case 's': store.updateSettings({ snap: !store.settings.snap }); break
-      case 'c': if (!store.activeShape.triangles.length) store.toggleClosed(); break
+    const levelsShown = () => store.levelStats.filter((l) => l.visible).length
+
+    switch (code) {
+      case 'Delete':
+      case 'Backspace': e.preventDefault(); store.deleteSelected(); break
+      case 'Escape': store.clearSelection(); break
+      case 'KeyV': store.setTool('select'); break
+      case 'KeyD':
+      case 'KeyP': store.setTool('draw'); break
+      case 'KeyR': store.setTool('ruler'); break
+      case 'KeyT': store.setTool('measure'); break
+      case 'KeyG': store.updateSettings({ showGrid: !store.settings.showGrid }); break
+      case 'KeyM': store.updateSettings({ showMeasures: !store.settings.showMeasures }); break
+      case 'KeyS': store.updateSettings({ snap: !store.settings.snap }); break
+      case 'KeyC': if (!store.activeShape.triangles.length) store.toggleClosed(); break
       // разбор потолка по слоям
-      case '[': store.showUpToLevel(store.levelStats.filter((l) => l.visible).length - 1); break
-      case ']': store.showUpToLevel(store.levelStats.filter((l) => l.visible).length + 1); break
-      case '\\': store.showAllLevels(); break
+      case 'BracketLeft': store.showUpToLevel(levelsShown() - 1); break
+      case 'BracketRight': store.showUpToLevel(levelsShown() + 1); break
+      case 'Backslash': store.showAllLevels(); break
     }
   }
 

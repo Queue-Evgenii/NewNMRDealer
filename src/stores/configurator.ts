@@ -678,14 +678,18 @@ export const useConfigurator = defineStore('configurator', {
       return true
     },
 
-    /** Врезает вершину в середину стороны — ручка на середине, а не «угадай клик». */
-    insertOnEdge(key: string): string | null {
+    /**
+     * Врезает вершину в сторону. Без `at` — ровно в середину; с `at` — в то
+     * место, где стоит ручка под курсором.
+     */
+    insertOnEdge(key: string, at?: { x: number; y: number }): string | null {
       const e = (this.edges as Edge[]).find((x) => x.key === key)
       if (!e) return null
       const shape = this.shapes.find((s) => s.id === e.shapeId)
       if (!shape) return null
       this.snapshot()
-      const p: Point = { id: newId(), x: Math.round((e.a.x + e.b.x) / 2), y: Math.round((e.a.y + e.b.y) / 2) }
+      const spot = at ?? { x: (e.a.x + e.b.x) / 2, y: (e.a.y + e.b.y) / 2 }
+      const p: Point = { id: newId(), x: Math.round(spot.x), y: Math.round(spot.y) }
       const idx = shape.points.findIndex((q) => q.id === e.a.id)
       shape.points.splice(idx + 1, 0, p)
       this._invalidateTriangles(shape)

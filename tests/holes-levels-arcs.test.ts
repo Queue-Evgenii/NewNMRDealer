@@ -441,3 +441,25 @@ describe('устаревшая разбивка', () => {
     expect(store.meshStale).toBe(false)
   })
 })
+
+describe('врезка угла в сторону', () => {
+  it('без указания места ставит угол ровно в середину', () => {
+    store.reset('rect')
+    const e = store.activeEdges[0]
+    const id = store.insertOnEdge(e.key)
+    const p = store.activeShape.points.find((x) => x.id === id)!
+    expect(p.x).toBe(Math.round((e.a.x + e.b.x) / 2))
+    expect(p.y).toBe(Math.round((e.a.y + e.b.y) / 2))
+  })
+
+  it('с указанием места ставит угол туда, где ручка под курсором', () => {
+    store.reset('rect')
+    const e = store.activeEdges[0]
+    const at = { x: e.a.x + (e.b.x - e.a.x) * 0.75, y: e.a.y + (e.b.y - e.a.y) * 0.75 }
+    const id = store.insertOnEdge(e.key, at)
+    const p = store.activeShape.points.find((x) => x.id === id)!
+    expect(p.x).toBe(Math.round(at.x))
+    expect(p.y).toBe(Math.round(at.y))
+    expect(store.activeShape.points).toHaveLength(5)
+  })
+})
