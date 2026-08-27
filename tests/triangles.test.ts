@@ -368,3 +368,33 @@ describe('контроль площади', () => {
     expect(store.triangleAreaM2).toBeCloseTo(store.activeAreaM2, 3)
   })
 })
+
+/**
+ * Врезанный в прямую стену угол оставляет три точки на одной линии. Ear
+ * clipping из них ухо не построит, и разбивка падала с «самопересечением».
+ */
+describe('вершины на прямой стене', () => {
+  it('разбивка переживает угол, врезанный в середину стены', () => {
+    store.reset('empty')
+    store.insertRectangle(4000, 3000)
+    const e = store.activeEdges[0]
+    store.insertOnEdge(e.key)
+    expect(store.activeShape.points).toHaveLength(5)
+
+    expect(store.triangulateActive(), 'плоская вершина не должна ломать разбивку').toBeNull()
+    expect(store.activeShape.triangles.length).toBeGreaterThan(0)
+    expect(store.triangleAreaM2).toBeCloseTo(12, 2)
+  })
+
+  it('и несколько подряд тоже', () => {
+    store.reset('empty')
+    store.insertRectangle(6000, 3000)
+    for (let i = 0; i < 3; i++) {
+      const e = store.activeEdges.find((x) => Math.abs(x.a.y - x.b.y) < 1 && x.a.y === 0)!
+      store.insertOnEdge(e.key)
+    }
+    expect(store.activeShape.points.length).toBeGreaterThan(6)
+    expect(store.triangulateActive()).toBeNull()
+    expect(store.triangleAreaM2).toBeCloseTo(18, 2)
+  })
+})

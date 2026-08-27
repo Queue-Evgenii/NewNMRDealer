@@ -6,6 +6,8 @@ export interface Point {
   id: string
   x: number // mm
   y: number // mm
+  /** Имя угла из мастера построения: «А», «у окна». Пусто — номер по порядку. */
+  name?: string
 }
 
 /** Per-edge properties, mirroring the original garpun / seam (spayka) flags. */

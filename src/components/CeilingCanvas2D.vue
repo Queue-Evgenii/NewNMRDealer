@@ -439,6 +439,41 @@ function angleLabelPos(a: { id: string; cx: number; cy: number }) {
   const off = px(26)
   return { x: p.x + (dx / d) * off, y: p.y + (dy / d) * off }
 }
+/**
+ * Куда отодвинуть подпись угла: против биссектрисы между его стенами.
+ * Так подпись всегда уходит в свободное место снаружи угла и не ложится
+ * ни на одну из стен — в отличие от простого «наружу от центра фигуры».
+ */
+function outwardAt(prev: XY, p: XY, next: XY): { x: number; y: number } {
+  let ux = prev.x - p.x; let uy = prev.y - p.y
+  let vx = next.x - p.x; let vy = next.y - p.y
+  const lu = Math.hypot(ux, uy) || 1
+  const lv = Math.hypot(vx, vy) || 1
+  ux /= lu; uy /= lu; vx /= lv; vy /= lv
+  let bx = ux + vx; let by = uy + vy
+  const bl = Math.hypot(bx, by)
+  if (bl < 1e-6) return { x: -uy, y: ux } // стены на одной линии — уходим вбок
+  return { x: -bx / bl, y: -by / bl }
+}
+
+/** Подписи углов, заданные в мастере. */
+const cornerLabels = computed(() => {
+  const out: { id: string; x: number; y: number; text: string }[] = []
+  for (const sh of visibleShapes.value) {
+    const pts = sh.points
+    const n = pts.length
+    if (n < 3) continue
+    for (let i = 0; i < n; i++) {
+      const p = pts[i]
+      if (!p.name) continue
+      const dir = outwardAt(pts[(i - 1 + n) % n], p, pts[(i + 1) % n])
+      const off = px(coarse ? 24 : 20)
+      out.push({ id: p.id, x: p.x + dir.x * off, y: p.y + dir.y * off, text: p.name })
+    }
+  }
+  return out
+})
+
 function isDrawStart(pid: string) {
   const s = activeShape.value
   return tool.value === 'draw' && !s.closed && s.points.length >= 3 && pid === s.points[0]?.id
@@ -822,6 +857,10 @@ onBeforeUnmount(() => {
     <circle v-if="tool === 'draw' && hoverEdge" :cx="hoverEdge.x" :cy="hoverEdge.y"
       :r="vertexR" class="edge-hint" :stroke-width="thinW * 2" />
 
+    <!-- имена углов из мастера -->
+    <text v-for="c in cornerLabels" :key="'cn' + c.id" :x="c.x" :y="c.y"
+      class="corner-name" :font-size="fontMm">{{ c.text }}</text>
+
     <!-- цель сварки -->
     <circle v-if="weldTarget" :cx="weldTarget.x" :cy="weldTarget.y" :r="vertexR * 2"
       class="weld" :stroke-width="thinW * 2" />
@@ -889,6 +928,7 @@ onBeforeUnmount(() => {
 .tri-preview { fill: rgba(79, 208, 138, 0.18); stroke: #4fd08a; }
 .tri-preview.bad { fill: rgba(255, 107, 107, 0.12); stroke: #ff6b6b; }
 .tri-preview.poor { fill: rgba(255, 167, 38, 0.14); stroke: #ffa726; }
+.corner-name { fill: #ffd54a; text-anchor: middle; dominant-baseline: middle; paint-order: stroke; stroke: #0f1420; stroke-width: 0.8px; }
 .shape-label { fill: #55637f; text-anchor: start; dominant-baseline: middle; }
 .shape-label.on { fill: #9fc0ff; }
 .ruler { stroke: #ff9f43; }

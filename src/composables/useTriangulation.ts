@@ -206,12 +206,39 @@ export function earClip(pts: XY[]): [number, number, number][] {
       const score = minAngleOf(a, b, c)
       if (!best || score > best.score) best = { at: i, tri: [i0, i1, i2], score }
     }
-    if (!best) break // самопересекающийся контур — разбить нельзя
+    if (!best) {
+      // Уха нет — но контур может быть цел: мешают «плоские» вершины, лежащие
+      // ровно на прямой между соседями (их оставляет врезка угла в стену).
+      // Такая вершина ничего не добавляет к площади, её просто выбрасываем.
+      const flat = dropFlatVertex(idx, pts)
+      if (flat) continue
+      break // остальное — действительно самопересечение
+    }
     out.push(best.tri)
     idx.splice(best.at, 1)
   }
   if (idx.length > 2) return []
   return delaunayFlip(out, pts)
+}
+
+/**
+ * Убирает одну вершину, лежащую ровно между соседями на прямой. Возвращает
+ * true, если что-то убрали. Развороты «шпилькой» не трогаем — там вершина
+ * не между соседями, и её удаление изменило бы контур.
+ */
+function dropFlatVertex(idx: number[], pts: XY[]): boolean {
+  for (let i = 0; i < idx.length; i++) {
+    const m = idx.length
+    const a = pts[idx[(i - 1 + m) % m]]
+    const b = pts[idx[i]]
+    const c = pts[idx[(i + 1) % m]]
+    if (Math.abs(cross3(a, b, c)) > 1e-6) continue
+    const between = (a.x - b.x) * (c.x - b.x) + (a.y - b.y) * (c.y - b.y) < 0
+    if (!between) continue
+    idx.splice(i, 1)
+    return true
+  }
+  return false
 }
 
 /** Лежит ли d внутри описанной окружности треугольника abc. */

@@ -13,6 +13,7 @@ import {
   pointInPolygon,
   snapValue,
 } from '../composables/useGeometry'
+import { contourProblem, wallsToPoints, type WallSpec } from '../composables/useWizard'
 import {
   arcLength,
   arcRadius,
@@ -216,7 +217,7 @@ function contourKeys(shape: Shape, all: Shape[]): Set<string> {
 /** Подписи вершин для листа замера: контур — числами, углы выреза — В1, В2… */
 function labelIndex(shape: Shape, all: Shape[]): Map<string, string> {
   const m = new Map<string, string>()
-  shapePoints(shape).forEach((p, i) => m.set(p.id, String(i + 1)))
+  shapePoints(shape).forEach((p, i) => m.set(p.id, p.name || String(i + 1)))
   let k = 0
   for (const h of holesOf(shape, all)) for (const p of h.points) m.set(p.id, 'В' + String(++k))
   return m
@@ -1031,6 +1032,28 @@ export const useConfigurator = defineStore('configurator', {
       this.selectedPointId = null
       this.persist()
     },
+    /**
+     * Контур из мастера: обход стен превращается в углы с именами.
+     * Возвращает текст ошибки, если обход складывается сам на себя.
+     */
+    insertFromWalls(walls: WallSpec[]): string | null {
+      const pts = wallsToPoints(walls)
+      if (pts.length < 3) return 'Углов должно быть хотя бы три'
+      const bad = contourProblem(pts)
+      if (bad) return bad
+      this.snapshot()
+      const s = makeShape(
+        pts.map((p) => ({ id: newId(), x: p.x, y: p.y, name: p.name || undefined })),
+        true,
+      )
+      this.shapes = [s]
+      this.activeShapeId = s.id
+      this.selectedPointId = null
+      this.selectedEdgeKey = null
+      this.persist()
+      return null
+    },
+
     insertLShape(w: number, h: number, cw: number, ch: number) {
       this.snapshot()
       const pts: Point[] = [

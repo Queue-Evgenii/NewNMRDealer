@@ -49,4 +49,8 @@ export {
   Copy as IconCopy,
   PanelLeftClose as IconPanelClose,
   PanelLeftOpen as IconPanelOpen,
+  CornerUpLeft as IconTurnLeft,
+  CornerUpRight as IconTurnRight,
+  ArrowRight as IconStraight,
+  Wand2 as IconWizard,
 } from 'lucide-vue-next'
