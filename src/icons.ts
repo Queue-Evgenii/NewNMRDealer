@@ -53,4 +53,6 @@ export {
   CornerUpRight as IconTurnRight,
   ArrowRight as IconStraight,
   Wand2 as IconWizard,
+  TriangleAlert as IconWarning,
+  Clock3 as IconSaved,
 } from 'lucide-vue-next'

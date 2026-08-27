@@ -27,6 +27,12 @@ interface State {
   list: ProjectMeta[]
   currentId: string
   ready: boolean
+  /**
+   * Слепок чертежа на момент последней отметки. Переключение проекта тоже
+   * меняет состояние конструктора, и без сравнения слепков дата «изменён»
+   * обновлялась от простого открытия — хотя ничего не правили.
+   */
+  snapshot: string
 }
 
 /**
@@ -44,7 +50,7 @@ function readStore(): { list: ProjectMeta[]; currentId: string } {
 }
 
 export const useProjects = defineStore('projects', {
-  state: (): State => ({ list: [], currentId: '', ready: false }),
+  state: (): State => ({ list: [], currentId: '', ready: false, snapshot: '' }),
 
   getters: {
     current(state): ProjectMeta | null {
@@ -89,7 +95,7 @@ export const useProjects = defineStore('projects', {
       cfg.load()
       this._watch()
       this.ready = true
-      this.touch()
+      this._refresh() // открытие — не правка: дату не трогаем
     },
 
     /** Новый пустой проект и сразу переход в него. */
@@ -103,7 +109,7 @@ export const useProjects = defineStore('projects', {
       setStorageKey(projectKey(meta.id))
       cfg.$reset()
       cfg.persist()
-      this._saveList()
+      this._refresh(meta)
       return meta.id
     },
 
@@ -118,7 +124,7 @@ export const useProjects = defineStore('projects', {
       this.currentId = id
       cfg.$reset()
       cfg.load()
-      this._saveList()
+      this._refresh(meta) // переключение — не правка
     },
 
     rename(id: string, name: string) {
@@ -168,18 +174,26 @@ export const useProjects = defineStore('projects', {
         const cfg = useConfigurator()
         cfg.$reset()
         cfg.load()
+        this._refresh(next)
       }
       this._saveList()
     },
 
-    /** Освежает карточку текущего проекта: дата, площадь, клиент. */
+    /** Отмечает правку: дата, площадь, клиент. */
     touch() {
       const meta = this.list.find((p) => p.id === this.currentId)
       if (!meta) return
-      const cfg = useConfigurator()
       meta.updatedAt = this._stamp()
-      meta.areaM2 = cfg.area / 1_000_000
-      meta.client = cfg.order.client
+      this._refresh(meta)
+    },
+    /** Освежает цифры карточки, НЕ трогая дату — после загрузки проекта. */
+    _refresh(meta?: ProjectMeta) {
+      const m = meta ?? this.list.find((p) => p.id === this.currentId)
+      if (!m) return
+      const cfg = useConfigurator()
+      m.areaM2 = cfg.area / 1_000_000
+      m.client = cfg.order.client
+      this.snapshot = cfg.serialize()
       this._saveList()
     },
 
@@ -208,13 +222,22 @@ export const useProjects = defineStore('projects', {
         localStorage.setItem(LIST_KEY, JSON.stringify({ list: this.list, currentId: this.currentId }))
       } catch { /* ignore */ }
     },
-    /** Карточка обновляется сама, когда чертёж меняется. */
+    /**
+     * Карточка обновляется сама — но только если чертёж реально другой.
+     * Сравниваем со слепком: открытие проекта тоже дёргает конструктор,
+     * и без этой проверки дата «изменён» врала.
+     */
     _watch() {
       const cfg = useConfigurator()
       let timer = 0
       cfg.$subscribe(() => {
         clearTimeout(timer)
-        timer = window.setTimeout(() => this.touch(), 600)
+        timer = window.setTimeout(() => {
+          const now = cfg.serialize()
+          if (now === this.snapshot) return
+          this.snapshot = now
+          this.touch()
+        }, 600)
       })
     },
   },

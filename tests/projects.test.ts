@@ -111,6 +111,39 @@ describe('проекты', () => {
     expect(localStorage.getItem(`nmr.project.${first}`)).toBeNull()
   })
 
+  it('переключение проекта не выдаёт себя за правку', () => {
+    projects.init()
+    const a = projects.currentId
+    cfg.insertRectangle(4000, 3000)
+    projects.touch()
+    const b = projects.create('Второй')
+
+    const dateA = projects.list.find((p) => p.id === a)!.updatedAt
+    const dateB = projects.list.find((p) => p.id === b)!.updatedAt
+
+    projects.open(a) // просто посмотрели
+    expect(projects.list.find((p) => p.id === a)!.updatedAt).toBe(dateA)
+    projects.open(b)
+    expect(projects.list.find((p) => p.id === b)!.updatedAt).toBe(dateB)
+
+    // перезапуск приложения тоже не правка
+    reload()
+    expect(projects.list.find((p) => p.id === a)!.updatedAt).toBe(dateA)
+  })
+
+  it('карточка помнит площадь и клиента после открытия', () => {
+    projects.init()
+    const a = projects.currentId
+    cfg.insertRectangle(4000, 3000)
+    cfg.order.client = 'Иванов'
+    projects.touch()
+    projects.create('Второй')
+    projects.open(a)
+    const meta = projects.list.find((p) => p.id === a)!
+    expect(meta.areaM2).toBeCloseTo(12, 3)
+    expect(meta.client).toBe('Иванов')
+  })
+
   it('список отсортирован по последнему изменению', async () => {
     projects.init()
     const a = projects.currentId

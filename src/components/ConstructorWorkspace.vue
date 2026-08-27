@@ -15,7 +15,8 @@ import CeilingView3D from './CeilingView3D.vue'
 import NewCeilingDialog from './NewCeilingDialog.vue'
 import HelpOverlay from './HelpOverlay.vue'
 import ProjectsPanel from './ProjectsPanel.vue'
-import { IconProjects, IconPanelClose, IconPanelOpen, IconChevronDown } from '../icons'
+import { savedWhen } from '../composables/useWhen'
+import { IconSaved, IconProjects, IconPanelClose, IconPanelOpen, IconChevronDown } from '../icons'
 import { useShortcuts } from '../composables/useShortcuts'
 import { decodeModel } from '../composables/useShareLink'
 import { IconStepBack, IconCheck, IconClose } from '../icons'
@@ -113,11 +114,20 @@ const hint = computed(() => {
       <!-- на телефоне колонки слева нет: имя проекта открывает список шторкой -->
       <button v-else class="proj-pick" @click="projectsSheet = !projectsSheet">
         <IconProjects :size="16" :stroke-width="1.75" />
-        <span>{{ currentProject?.name ?? 'Проект' }}</span>
+        <span class="pick-txt">
+          <span class="pick-name">{{ currentProject?.name ?? 'Проект' }}</span>
+          <span v-if="currentProject" class="pick-when">{{ savedWhen(currentProject.updatedAt) }}</span>
+        </span>
         <IconChevronDown :size="14" :stroke-width="2" />
       </button>
 
       <span v-if="!phone" class="proj-name">{{ currentProject?.name ?? '' }}</span>
+      <!-- отметка сохранения — как в Word: видно, что правки не потеряются -->
+      <span v-if="!phone && currentProject" class="saved"
+        :title="new Date(currentProject.updatedAt).toLocaleString('ru')">
+        <IconSaved :size="13" :stroke-width="1.9" />
+        {{ savedWhen(currentProject.updatedAt) }}
+      </span>
 
       <div class="tabs">
         <button :class="{ on: tab === '2d' }" @click="tab = '2d'">2D чертёж</button>
@@ -202,7 +212,14 @@ const hint = computed(() => {
   height: 32px; padding: 0 10px; border-radius: 8px; cursor: pointer; font-size: 13px;
   background: #1b2436; border: 1px solid #2a3550; color: #dbe6ff;
 }
-.proj-pick span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proj-pick { height: auto; min-height: 34px; padding: 4px 10px; }
+.pick-txt { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; line-height: 1.2; }
+.pick-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-when { font-size: 10px; color: #6d7f9e; }
+.saved {
+  display: flex; align-items: center; gap: 5px; flex: 0 0 auto;
+  font-size: 11px; color: #6d7f9e; white-space: nowrap;
+}
 .proj-drop {
   position: absolute; left: 8px; right: 8px; top: 52px; z-index: 20;
   max-height: 62%; display: flex;

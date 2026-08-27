@@ -3,6 +3,8 @@
 import { ref, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useProjects } from '../stores/projects'
+import { shortWhen } from '../composables/useWhen'
+import ConfirmDialog from './ConfirmDialog.vue'
 import { IconProjectNew, IconRename, IconCopy, IconDelete } from '../icons'
 
 defineProps<{ compact?: boolean }>()
@@ -37,20 +39,11 @@ function addProject() {
   projects.create()
   emit('pick')
 }
-function removeProject(id: string, name: string) {
-  if (confirm(`Удалить проект «${name}»? Чертёж будет потерян.`)) projects.remove(id)
-}
-
-/** Короткая дата: сегодня и вчера — словами, дальше числом. */
-function when(ts: number): string {
-  const d = new Date(ts)
-  const today = new Date()
-  const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
-  const yesterday = new Date(today.getTime() - 86400000)
-  const hhmm = d.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })
-  if (sameDay(d, today)) return hhmm
-  if (sameDay(d, yesterday)) return 'вчера'
-  return d.toLocaleDateString('ru', { day: 'numeric', month: 'short' })
+// удаление подтверждаем своим окном, а не системным confirm()
+const pendingDelete = ref<{ id: string; name: string } | null>(null)
+function confirmDelete() {
+  if (pendingDelete.value) projects.remove(pendingDelete.value.id)
+  pendingDelete.value = null
 }
 </script>
 
@@ -72,7 +65,7 @@ function when(ts: number): string {
         <template v-else>
           <div class="row">
             <span class="name">{{ p.name }}</span>
-            <span class="when">{{ when(p.updatedAt) }}</span>
+            <span class="when">{{ shortWhen(p.updatedAt) }}</span>
           </div>
           <div class="row sub">
             <span class="muted">{{ p.areaM2 ? p.areaM2.toFixed(2) + ' м²' : 'пусто' }}</span>
@@ -84,7 +77,7 @@ function when(ts: number): string {
               <button title="Дубликат" @click.stop="projects.duplicate(p.id)">
                 <IconCopy :size="14" :stroke-width="1.75" />
               </button>
-              <button class="danger" title="Удалить проект" @click.stop="removeProject(p.id, p.name)">
+              <button class="danger" title="Удалить проект" @click.stop="pendingDelete = { id: p.id, name: p.name }">
                 <IconDelete :size="14" :stroke-width="1.75" />
               </button>
             </div>
@@ -92,6 +85,11 @@ function when(ts: number): string {
         </template>
       </li>
     </ul>
+
+    <ConfirmDialog v-if="pendingDelete"
+      title="Удалить проект?"
+      :message="`Проект «${pendingDelete.name}» и его чертёж будут удалены без возможности вернуть.`"
+      confirm-text="Удалить" @confirm="confirmDelete" @cancel="pendingDelete = null" />
   </div>
 </template>
 

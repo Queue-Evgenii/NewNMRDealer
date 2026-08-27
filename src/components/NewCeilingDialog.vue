@@ -114,8 +114,9 @@ h2 { margin: 0 0 4px; font-size: 19px; }
 .kinds button.on { border-color: #2f6fed; background: #16233f; color: #fff; }
 .ico { font-size: 24px; }
 .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-.fields label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: #8fa3c4; }
+.fields label { min-width: 0; display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: #8fa3c4; }
 .fields input {
+  min-width: 0; /* иначе поля не дают колонкам сжаться и диалог вылезает за экран */
   background: #0d1320; border: 1px solid #2a3550; color: #e8eefc; border-radius: 7px;
   padding: 9px 10px; font-size: 15px;
 }

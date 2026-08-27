@@ -115,3 +115,32 @@ describe('иконки', () => {
     expect(files, 'иконки импортируются напрямую из lucide, минуя src/icons.ts').toEqual([])
   })
 })
+
+/**
+ * Системные confirm/alert нельзя оформить, они блокируют вкладку и в
+ * мобильном вебвью выглядят чужеродно — спрашиваем своим диалогом.
+ */
+describe('свои диалоги вместо системных', () => {
+  function walk(dir: string, out: string[] = []): string[] {
+    for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, f.name)
+      if (f.isDirectory()) walk(p, out)
+      else if (f.name.endsWith('.vue') || f.name.endsWith('.ts')) out.push(p)
+    }
+    return out
+  }
+
+  it('в коде нет confirm() и alert()', () => {
+    const bad: string[] = []
+    for (const file of walk('src')) {
+      const text = fs.readFileSync(file, 'utf8')
+      for (const [i, line] of text.split('\n').entries()) {
+        const code = line.replace(/\/\/.*$/, '').replace(/^\s*\*.*$/, '') // без комментариев
+        if (/(^|[^.\w])(confirm|alert)\s*\(/.test(code)) {
+          bad.push(`${path.relative('src', file)}:${i + 1}`)
+        }
+      }
+    }
+    expect(bad, 'спрашивайте через ConfirmDialog.vue').toEqual([])
+  })
+})
