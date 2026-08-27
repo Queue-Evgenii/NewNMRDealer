@@ -152,12 +152,13 @@ const handleEdges = computed(() => {
   const minPx = coarse ? 76 : 54
   return activeEdges.value.filter((e) => e.length / mmPerPx.value > minPx)
 })
-/** Прямая сторона: ручка врезает новый угол; под курсором едет по стороне. */
+/**
+ * Прямая сторона: ручка врезает новый угол. Стоит РОВНО посередине и никуда
+ * не уезжает — куда нарисована, туда точка и встанет. Нужен другой угол —
+ * ручку перетаскивают, точка едет за пальцем.
+ */
 const midHandles = computed(() =>
-  handleEdges.value.filter((e) => !e.props.bulge).map((e) => {
-    const h = hoverEdge.value
-    return h && h.key === e.key ? { key: e.key, x: h.x, y: h.y } : { key: e.key, ...mid(e.a, e.b) }
-  }))
+  handleEdges.value.filter((e) => !e.props.bulge).map((e) => ({ key: e.key, ...mid(e.a, e.b) })))
 /** Скруглённая сторона: ручка сидит на дуге и тянет кривизну. */
 const arcHandles = computed(() =>
   handleEdges.value.filter((e) => e.props.bulge)
