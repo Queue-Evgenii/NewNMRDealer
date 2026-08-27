@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMediaQuery } from '@vueuse/core'
 import { useConfigurator } from '../stores/configurator'
+import { useProjects } from '../stores/projects'
 import Toolbar from './Toolbar.vue'
 import ModeSwitch from './ModeSwitch.vue'
 import MobileBar from './MobileBar.vue'
@@ -13,6 +14,8 @@ import CeilingCanvas2D from './CeilingCanvas2D.vue'
 import CeilingView3D from './CeilingView3D.vue'
 import NewCeilingDialog from './NewCeilingDialog.vue'
 import HelpOverlay from './HelpOverlay.vue'
+import ProjectsPanel from './ProjectsPanel.vue'
+import { IconProjects, IconPanelClose, IconPanelOpen, IconChevronDown } from '../icons'
 import { useShortcuts } from '../composables/useShortcuts'
 import { decodeModel } from '../composables/useShareLink'
 import { IconStepBack, IconCheck, IconClose } from '../icons'
@@ -21,9 +24,22 @@ useShortcuts()
 const store = useConfigurator()
 const { tool, activeShape, measureBaseKey } = storeToRefs(store)
 
+const projects = useProjects()
+const { current: currentProject } = storeToRefs(projects)
+
+const PROJ_KEY = 'nmr.projects.open'
+const projectsOpen = ref(((): boolean => {
+  try { return localStorage.getItem(PROJ_KEY) !== '0' } catch { return true }
+})())
+watch(projectsOpen, (v) => { try { localStorage.setItem(PROJ_KEY, v ? '1' : '0') } catch { /* ignore */ } })
+const projectsSheet = ref(false)
+
 const sharedNotice = ref(false)
 
 onMounted(async () => {
+  // проекты держат список чертежей и задают ключ хранения текущего
+  projects.init()
+
   // чертёж мог прийти ссылкой: данные лежат в hash и на сервер не уходят
   const payload = new URLSearchParams(location.hash.split('?')[1] ?? '').get('d')
   if (payload) {
@@ -37,7 +53,6 @@ onMounted(async () => {
       return
     }
   }
-  store.load()
 })
 
 function keepShared() {
@@ -89,16 +104,37 @@ const hint = computed(() => {
 <template>
   <div class="ws">
     <div class="ws-head">
+      <button v-if="!phone" class="proj-toggle"
+        :title="projectsOpen ? 'Скрыть проекты' : 'Показать проекты'"
+        @click="projectsOpen = !projectsOpen">
+        <component :is="projectsOpen ? IconPanelClose : IconPanelOpen" :size="17" :stroke-width="1.75" />
+      </button>
+
+      <!-- на телефоне колонки слева нет: имя проекта открывает список шторкой -->
+      <button v-else class="proj-pick" @click="projectsSheet = !projectsSheet">
+        <IconProjects :size="16" :stroke-width="1.75" />
+        <span>{{ currentProject?.name ?? 'Проект' }}</span>
+        <IconChevronDown :size="14" :stroke-width="2" />
+      </button>
+
+      <span v-if="!phone" class="proj-name">{{ currentProject?.name ?? '' }}</span>
+
       <div class="tabs">
         <button :class="{ on: tab === '2d' }" @click="tab = '2d'">2D чертёж</button>
         <button :class="{ on: tab === '3d' }" @click="tab = '3d'">3D вид</button>
       </div>
     </div>
 
+    <div v-if="phone && projectsSheet" class="proj-drop">
+      <ProjectsPanel compact @pick="projectsSheet = false" />
+    </div>
+
     <Toolbar v-if="!phone && tab === '2d'"
       @fit="canvasRef?.fit()" @new="showNew = true" @help="showHelp = true" />
 
     <div :class="['ws-body', { phone }]">
+      <ProjectsPanel v-if="!phone && projectsOpen" />
+
       <div class="stage">
         <CeilingCanvas2D v-show="tab === '2d'" ref="canvasRef" />
         <CeilingView3D v-if="tab === '3d'" />
@@ -151,9 +187,28 @@ const hint = computed(() => {
 </template>
 
 <style scoped>
-.ws { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
-.ws-head { display: flex; align-items: center; padding: 8px 12px; background: #0b1120; border-bottom: 1px solid #223; }
-.tabs { display: flex; gap: 4px; }
+.ws { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
+.ws-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #0b1120; border-bottom: 1px solid #223; }
+.tabs { display: flex; gap: 4px; margin-left: auto; }
+.proj-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+  background: #1b2436; border: 1px solid #2a3550; color: #9fb3d6;
+}
+.proj-toggle:hover { background: #24314b; }
+.proj-name { font-size: 13px; color: #8fa3c4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proj-pick {
+  display: flex; align-items: center; gap: 7px; max-width: 62%;
+  height: 32px; padding: 0 10px; border-radius: 8px; cursor: pointer; font-size: 13px;
+  background: #1b2436; border: 1px solid #2a3550; color: #dbe6ff;
+}
+.proj-pick span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proj-drop {
+  position: absolute; left: 8px; right: 8px; top: 52px; z-index: 20;
+  max-height: 62%; display: flex;
+  background: #0d1320; border: 1px solid #2a3550; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
 .tabs button {
   padding: 7px 15px; border-radius: 8px; cursor: pointer; font-size: 14px;
   background: #1b2436; color: #cbd5e1; border: 1px solid #2a3550;

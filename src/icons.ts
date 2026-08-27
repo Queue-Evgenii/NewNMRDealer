@@ -43,4 +43,10 @@ export {
   Eye as IconShow,
   EyeOff as IconHide,
   Focus as IconIsolate,
+  Files as IconProjects,
+  FilePlus2 as IconProjectNew,
+  Pencil as IconRename,
+  Copy as IconCopy,
+  PanelLeftClose as IconPanelClose,
+  PanelLeftOpen as IconPanelOpen,
 } from 'lucide-vue-next'

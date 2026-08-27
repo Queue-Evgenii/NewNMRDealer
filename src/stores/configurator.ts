@@ -82,6 +82,15 @@ interface State {
 }
 
 const STORAGE_KEY = 'nmr.configurator.v2'
+
+/**
+ * Куда сохраняется чертёж. Каждый проект держит свой ключ, поэтому store
+ * проектов подменяет его при переключении. По умолчанию — старый ключ, чтобы
+ * работа, сделанная до появления проектов, никуда не делась.
+ */
+let storageKey = STORAGE_KEY
+export function setStorageKey(key: string) { storageKey = key }
+export function getStorageKey() { return storageKey }
 /** Сюда отложим свою работу, если чертёж открыли по чужой ссылке. */
 const BACKUP_KEY = 'nmr.configurator.backup'
 const HISTORY_LIMIT = 100
@@ -1329,7 +1338,7 @@ export const useConfigurator = defineStore('configurator', {
      */
     applyShared(model: SerializedModel) {
       try {
-        const mine = localStorage.getItem(STORAGE_KEY)
+        const mine = localStorage.getItem(storageKey)
         if (mine) localStorage.setItem(BACKUP_KEY, mine)
       } catch { /* ignore */ }
       this.applySerialized(model)
@@ -1366,9 +1375,9 @@ export const useConfigurator = defineStore('configurator', {
         this.snapshot(); this.applySerialized(model); this.persist()
       } catch { /* ignore */ }
     },
-    persist() { try { localStorage.setItem(STORAGE_KEY, this.serialize()) } catch { /* ignore */ } },
+    persist() { try { localStorage.setItem(storageKey, this.serialize()) } catch { /* ignore */ } },
     load() {
-      try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) this.applySerialized(JSON.parse(raw)) } catch { /* ignore */ }
+      try { const raw = localStorage.getItem(storageKey); if (raw) this.applySerialized(JSON.parse(raw)) } catch { /* ignore */ }
     },
   },
 })

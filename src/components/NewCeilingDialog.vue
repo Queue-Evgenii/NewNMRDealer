@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useConfigurator } from '../stores/configurator'
+import { useProjects } from '../stores/projects'
 import { IconRect, IconContour, IconFreeform } from '../icons'
 
 const store = useConfigurator()
+const projects = useProjects()
+const name = ref('')
 const emit = defineEmits<{ (e: 'close'): void }>()
 
 const kind = ref<'rect' | 'lshape' | 'empty'>('rect')
@@ -13,6 +16,8 @@ const cw = ref(1200)
 const ch = ref(800)
 
 function create() {
+  // новый потолок — это новый проект: он появится в списке слева
+  projects.create(name.value)
   if (kind.value === 'rect') store.insertRectangle(w.value, h.value)
   else if (kind.value === 'lshape') store.insertLShape(w.value, h.value, cw.value, ch.value)
   else store.reset('empty')
@@ -24,7 +29,11 @@ function create() {
   <div class="overlay" @click.self="emit('close')">
     <div class="dialog">
       <h2>Новый потолок</h2>
-      <p class="sub">Выберите форму комнаты и введите размеры в миллиметрах.</p>
+      <p class="sub">Появится отдельным проектом в списке слева.</p>
+
+      <label class="name">Название
+        <input v-model="name" type="text" placeholder="Например: Кухня, Иванов" />
+      </label>
 
       <div class="kinds">
         <button :class="{ on: kind === 'rect' }" @click="kind = 'rect'">
@@ -70,6 +79,11 @@ function create() {
 }
 h2 { margin: 0 0 4px; font-size: 19px; }
 .sub { margin: 0 0 16px; color: #8fa3c4; font-size: 13px; }
+.name { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; font-size: 12px; color: #8fa3c4; }
+.name input {
+  background: #0d1320; border: 1px solid #2a3550; color: #e8eefc;
+  border-radius: 8px; padding: 9px 10px; font-size: 14px;
+}
 .kinds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
 .kinds button {
   display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 6px;
