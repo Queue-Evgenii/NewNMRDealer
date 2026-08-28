@@ -135,7 +135,8 @@ describe('свои диалоги вместо системных', () => {
     for (const file of walk('src')) {
       const text = fs.readFileSync(file, 'utf8')
       for (const [i, line] of text.split('\n').entries()) {
-        const code = line.replace(/\/\/.*$/, '').replace(/^\s*\*.*$/, '') // без комментариев
+        // без комментариев (\r в конце строки CRLF мешает якорю $)
+        const code = line.replace(/\r/g, '').replace(/\/\/.*$/, '').replace(/^\s*\*.*$/, '')
         if (/(^|[^.\w])(confirm|alert)\s*\(/.test(code)) {
           bad.push(`${path.relative('src', file)}:${i + 1}`)
         }
