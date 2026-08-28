@@ -116,7 +116,15 @@ const visiblePoints = computed(() => visibleShapes.value.flatMap((sh) => [...sh.
  * усадки у всех разом превращают чертёж в кашу.
  */
 const activeIds = computed(() => new Set(activeShape.value?.points.map((p) => p.id) ?? []))
-const activeTriangles = computed(() => trianglesView.value.filter((t) => t.active))
+/**
+ * Разбивку показываем у всех видимых фигур, а не только у активной: замер
+ * соседнего яруса никуда не девается, просто гаснет — иначе кажется, что
+ * треугольники стёрлись, стоило перейти на другую фигуру.
+ */
+const shownTriangles = computed(() => {
+  const vis = new Set(visibleShapes.value.map((s) => s.id))
+  return trianglesView.value.filter((t) => vis.has(t.shapeId))
+})
 const activeAngles = computed(() => angles.value.filter((a) => activeIds.value.has(a.id)))
 
 // ---- стороны: прямые и скруглённые --------------------------------------
@@ -786,7 +794,7 @@ onBeforeUnmount(() => {
 
     <!-- разбивка на треугольники -->
     <g v-if="settings.showTriangles">
-      <g v-for="t in activeTriangles" :key="t.id">
+      <g v-for="t in shownTriangles" :key="t.id" :class="{ faded: !t.active }">
         <polygon :points="ptsStr(t.pts)" class="tri" :stroke-width="thinW" />
         <line v-for="d in t.inner" :key="t.id + d.key" :x1="d.a.x" :y1="d.a.y" :x2="d.b.x" :y2="d.b.y"
           class="tri-diag" :stroke-width="thinW * 1.6" :stroke-dasharray="`${px(9)} ${px(6)}`" />
@@ -923,6 +931,8 @@ onBeforeUnmount(() => {
 .tri { fill: rgba(127, 214, 255, 0.05); stroke: rgba(127, 214, 255, 0.18); }
 .tri-diag { stroke: #7fd6ff; opacity: 0.65; }
 .tri-no { fill: #7fd6ff; opacity: 0.75; text-anchor: middle; dominant-baseline: middle; }
+/* разбивка чужой фигуры — на грани видимости, только чтобы помнить, что она есть */
+.faded { opacity: 0.22; }
 .dim { opacity: 0.45; }
 .tri-preview { fill: rgba(79, 208, 138, 0.18); stroke: #4fd08a; }
 .tri-preview.bad { fill: rgba(255, 107, 107, 0.12); stroke: #ff6b6b; }

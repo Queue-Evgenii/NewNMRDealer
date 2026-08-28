@@ -122,3 +122,39 @@ describe('ручка кривизны на дуге', () => {
     expect(Math.abs((after.chord * after.props.bulge) / 2)).toBeGreaterThan(600)
   })
 })
+
+describe('разбивка на треугольники', () => {
+  it('у чужой фигуры не исчезает, а гаснет', async () => {
+    store.reset('empty')
+    // первая фигура: её и размечаем треугольниками
+    store.setTool('draw')
+    for (const p of [{ x: 0, y: 0 }, { x: 3000, y: 0 }, { x: 3000, y: 2000 }, { x: 0, y: 2000 }]) {
+      store.drawPoint(p.x, p.y, false)
+    }
+    store.finishDraw(true)
+    const measured = store.activeShapeId
+    store.triangulateActive()
+    expect(store.activeShape.triangles.length).toBeGreaterThan(0)
+
+    // вторая фигура рядом — переходим на неё
+    store.setTool('draw')
+    for (const p of [{ x: 4000, y: 0 }, { x: 6000, y: 0 }, { x: 6000, y: 1500 }]) store.drawPoint(p.x, p.y, false)
+    store.finishDraw(true)
+    expect(store.activeShapeId).not.toBe(measured)
+
+    const c = await canvas()
+    const groups = c.w.findAll('.tri')
+    expect(groups.length).toBeGreaterThan(0) // разбивка осталась на чертеже
+    for (const g of groups) {
+      expect(g.element.parentElement?.classList.contains('faded')).toBe(true)
+    }
+
+    // вернулись на размеченную фигуру — разбивка снова в полную силу
+    store.setActiveShape(measured)
+    await nextTick()
+    const back = c.w.findAll('.tri')
+    for (const g of back) {
+      expect(g.element.parentElement?.classList.contains('faded')).toBe(false)
+    }
+  })
+})
