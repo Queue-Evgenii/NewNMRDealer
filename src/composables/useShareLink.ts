@@ -11,6 +11,8 @@
  */
 import type { EdgeProps, Point, SerializedModel, Shape } from '../types'
 import { edgeKey, newId } from './useGeometry'
+import { DEFAULT_COLOR, normalizeHex } from '../ceilingColors'
+import { DEFAULT_FILM, FILMS } from '../filmColors'
 
 /** Одна фигура в компактном виде. */
 interface PackedShape {
@@ -29,6 +31,10 @@ interface PackedShape {
   e: [number, 0 | 1, 0 | 1, number][]
   /** треугольники замера по индексам общей таблицы точек */
   t: [number, number, number][]
+  /** цвет полотна, шесть знаков без решётки */
+  cf: string
+  /** плёнка — номер в FILMS */
+  fi: number
 }
 
 interface Packed {
@@ -38,10 +44,8 @@ interface Packed {
   s: PackedShape[]
   /** усадка, шаг сетки */
   st: [number, number]
-  /** клиент, полотно, цвет, валюта */
-  o: [string, string, string, string]
-  /** цены: полотно, гарпун, спайка, монтаж */
-  pr: [number, number, number, number]
+  /** клиент, валюта */
+  o: [string, string]
   /** спрятанные ярусы */
   h: number[]
 }
@@ -75,6 +79,8 @@ function packModel(model: SerializedModel): Packed {
       d: s.drop ?? 0,
       e: [],
       t: [],
+      cf: (s.colorHex ?? DEFAULT_COLOR.hex).replace('#', ''),
+      fi: Math.max(0, FILMS.indexOf(s.film)),
     })
   }
 
@@ -103,11 +109,7 @@ function packModel(model: SerializedModel): Packed {
     p: coords,
     s: shapes,
     st: [model.settings?.usad ?? 7, model.settings?.gridStep ?? 100],
-    o: [model.order?.client ?? '', model.order?.film ?? 'Глянец', model.order?.color ?? '', model.order?.currency ?? 'PLN'],
-    pr: [
-      model.pricing?.filmPerM2 ?? 45, model.pricing?.garpunPerM ?? 6,
-      model.pricing?.seamPerM ?? 12, model.pricing?.workPerM2 ?? 20,
-    ],
+    o: [model.order?.client ?? '', model.order?.currency ?? 'PLN'],
     h: model.hiddenLevels ?? [],
   }
 }
@@ -143,6 +145,8 @@ function unpackModel(packed: Packed): SerializedModel {
       kind: ps.k ? 'hole' : 'ceiling',
       level: ps.l,
       drop: ps.d,
+      colorHex: normalizeHex(ps.cf) ?? DEFAULT_COLOR.hex,
+      film: FILMS[ps.fi] ?? DEFAULT_FILM,
       triangles: ps.t
         .filter(([a, b, c]) => pts[a] && pts[b] && pts[c])
         .map(([a, b, c]) => ({ id: newId(), a: pts[a].id, b: pts[b].id, c: pts[c].id })),
@@ -157,11 +161,7 @@ function unpackModel(packed: Packed): SerializedModel {
       usad: packed.st[0], gridStep: packed.st[1],
       showGrid: true, showMeasures: true, showTriangles: true, snap: true, pxPerMm: 0.18,
     },
-    order: { client: packed.o[0], film: packed.o[1], color: packed.o[2], currency: packed.o[3] },
-    pricing: {
-      filmPerM2: packed.pr[0], garpunPerM: packed.pr[1],
-      seamPerM: packed.pr[2], workPerM2: packed.pr[3],
-    },
+    order: { client: packed.o[0], currency: packed.o[1] },
     hiddenLevels: packed.h,
   }
 }

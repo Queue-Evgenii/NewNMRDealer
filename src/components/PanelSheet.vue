@@ -5,14 +5,15 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import { IconChevronUp, IconChevronDown } from '../icons'
+import { CURRENCY } from '../pricing'
 
 const store = useConfigurator()
-const { area, perimeterMm, cost, order } = storeToRefs(store)
+const { totals } = storeToRefs(store)
 
 const open = ref(false)
-const areaM2 = computed(() => (area.value / 1_000_000).toFixed(2))
-const perimM = computed(() => (perimeterMm.value / 1000).toFixed(2))
-const total = computed(() => cost.value.total.toFixed(0))
+const areaM2 = computed(() => totals.value.areaM2.toFixed(2))
+const perimM = computed(() => totals.value.perimM.toFixed(2))
+const price = computed(() => totals.value.price.toFixed(0))
 </script>
 
 <template>
@@ -22,7 +23,7 @@ const total = computed(() => cost.value.total.toFixed(0))
       <span class="peek">
         <span>S <b>{{ areaM2 }}</b> м²</span>
         <span>P <b>{{ perimM }}</b> м</span>
-        <span>Итого <b>{{ total }}</b> {{ order.currency }}</span>
+        <span>Цена <b>{{ price }}</b> {{ CURRENCY }}</span>
       </span>
       <span class="chev">
         <component :is="open ? IconChevronDown : IconChevronUp" :size="16" :stroke-width="1.75" />

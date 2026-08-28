@@ -1,7 +1,6 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import type {
-  Point, Edge, EdgeProps, Shape, ShapeKind, Triangle, Settings, Order, Pricing,
-  CostBreakdown, SerializedModel,
+  Point, Edge, EdgeProps, Shape, ShapeKind, Triangle, Settings, Order, SerializedModel,
 } from '../types'
 import {
   edgeKey,
@@ -14,8 +13,13 @@ import {
   snapValue,
 } from '../composables/useGeometry'
 import { contourProblem, wallsToPoints, type WallSpec } from '../composables/useWizard'
+import { DEFAULT_COLOR, normalizeHex } from '../ceilingColors'
+import { priceOf } from '../pricing'
+import { DEFAULT_FILM, FILMS } from '../filmColors'
 import {
+  arcInfo,
   arcLength,
+  arcMidpoint,
   arcRadius,
   arcSagitta,
   bulgeFromRadius,
@@ -69,7 +73,6 @@ interface State {
   selectedEdgeKey: string | null
   settings: Settings
   order: Order
-  pricing: Pricing
   tool: Tool
   /** Контур, который сейчас рисуют (режим «Рисовать»). */
   drawShapeId: string | null
@@ -100,12 +103,8 @@ function defaultSettings(): Settings {
   return { gridStep: 100, showGrid: true, showMeasures: true, showTriangles: true, snap: true, usad: 7, pxPerMm: 0.18 }
 }
 function defaultOrder(): Order {
-  return { client: '', film: 'Глянец', color: 'Белый', currency: 'PLN' }
+  return { client: '', currency: 'PLN' }
 }
-function defaultPricing(): Pricing {
-  return { filmPerM2: 45, garpunPerM: 6, seamPerM: 12, workPerM2: 20 }
-}
-
 /** Свойства стороны по умолчанию: гарпун есть, шва нет, сторона прямая. */
 const DEFAULT_EDGE: EdgeProps = { garpun: true, seam: false, bulge: 0 }
 
@@ -113,6 +112,7 @@ function makeShape(points: Point[], closed: boolean): Shape {
   return {
     id: newId(), points, closed, edgeProps: {}, triangles: [], innerPoints: [],
     measureDirty: false, kind: 'ceiling', level: 1, drop: 0,
+    colorHex: DEFAULT_COLOR.hex, film: DEFAULT_FILM,
   }
 }
 
@@ -269,7 +269,6 @@ export const useConfigurator = defineStore('configurator', {
       selectedEdgeKey: null,
       settings: defaultSettings(),
       order: defaultOrder(),
-      pricing: defaultPricing(),
       tool: 'select',
       drawShapeId: null,
       measureBaseKey: null,
@@ -300,6 +299,8 @@ export const useConfigurator = defineStore('configurator', {
           level: s.level,
           drop: s.drop,
           visible: !state.hiddenLevels.includes(s.level),
+          colorHex: s.colorHex,
+          film: s.film,
           /** Площадь контура, мм² — по ней выбирается самая мелкая фигура под курсором. */
           areaMm: outlineArea(s),
           points: s.points,
@@ -567,15 +568,51 @@ export const useConfigurator = defineStore('configurator', {
       }
       return null
     },
-    cost(state): CostBreakdown {
-      const m2 = (this.area as number) / 1_000_000
-      const garpunM = (this.garpunLength as number) / 1000
-      const seamM = (this.seamLength as number) / 1000
-      const film = m2 * state.pricing.filmPerM2
-      const garpun = garpunM * state.pricing.garpunPerM
-      const seam = seamM * state.pricing.seamPerM
-      const work = m2 * state.pricing.workPerM2
-      return { film, garpun, seam, work, total: film + garpun + seam + work }
+    /**
+     * Метраж и цена по каждому полотну: площадь за вычетом своих вырезов,
+     * периметр и крепёж — вместе с обводом этих вырезов. Прайс статичный.
+     */
+    shapeStats(state): { id: string; areaM2: number; perimM: number; price: number }[] {
+      const edges = this.edges as Edge[]
+      return state.shapes
+        .filter((s) => s.kind === 'ceiling' && s.closed)
+        .map((s) => {
+          const holes = holesOf(s, state.shapes)
+          const ids = [s.id, ...holes.map((h) => h.id)]
+          const own = edges.filter((e) => ids.includes(e.shapeId))
+          const areaMm = holes.reduce((a, h) => a - outlineArea(h), outlineArea(s))
+          const sum = (list: Edge[]) => list.reduce((n, e) => n + e.length, 0)
+          const areaM2 = Math.max(0, areaMm) / 1_000_000
+          return {
+            id: s.id,
+            areaM2,
+            perimM: sum(own) / 1000,
+            price: priceOf({
+              areaM2,
+              garpunM: sum(own.filter((e) => e.props.garpun)) / 1000,
+              seamM: sum(own.filter((e) => e.props.seam)) / 1000,
+              film: s.film,
+            }),
+          }
+        })
+    },
+    /** Полотно, из которого вычитается вырез. Нет такого — вырез бесполезен. */
+    hostOfActive(state): Shape | null {
+      const s = this.activeShape as Shape
+      return state.shapes.find((x) => x.id !== s.id && x.kind === 'ceiling' && nestedIn(s, x)) ?? null
+    },
+    /** Цифры выбранного полотна — их показывают рядом с общими. */
+    activeStats(state): { areaM2: number; perimM: number; price: number } {
+      const s = (this.shapeStats as { id: string; areaM2: number; perimM: number; price: number }[])
+        .find((x) => x.id === state.activeShapeId)
+      return s ?? { areaM2: 0, perimM: 0, price: 0 }
+    },
+    /** Итого по чертежу. */
+    totals(): { areaM2: number; perimM: number; price: number } {
+      return (this.shapeStats as { areaM2: number; perimM: number; price: number }[]).reduce(
+        (a, s) => ({ areaM2: a.areaM2 + s.areaM2, perimM: a.perimM + s.perimM, price: a.price + s.price }),
+        { areaM2: 0, perimM: 0, price: 0 },
+      )
     },
   },
 
@@ -688,17 +725,110 @@ export const useConfigurator = defineStore('configurator', {
       if (!e) return null
       const shape = this.shapes.find((s) => s.id === e.shapeId)
       if (!shape) return null
+
+      /*
+       * У скруглённой стороны точка садится на саму дугу, а центральный угол
+       * делится между половинами — форма от деления не меняется. Дальше
+       * половины гнут по отдельности: так получается несимметричный контур,
+       * которого одной дугой не сделать.
+       */
+      const info = e.props.bulge ? arcInfo(e.a, e.b, e.props.bulge) : null
+      let split: { p: Point; b1: number; b2: number } | null = null
+      if (info) {
+        const target = at ?? arcMidpoint(e.a, e.b, e.props.bulge)
+        const ang = Math.atan2(target.y - info.cy, target.x - info.cx)
+        const dir = Math.sign(info.theta)
+        let t1 = ang - info.start
+        while (t1 * dir < 0) t1 += 2 * Math.PI * dir
+        while (Math.abs(t1) > Math.abs(info.theta)) t1 -= 2 * Math.PI * dir
+        const t2 = info.theta - t1
+        // у самого конца дуги делить нечего
+        if (Math.abs(t1) > 0.05 && Math.abs(t2) > 0.05) {
+          split = {
+            p: {
+              id: newId(),
+              x: Math.round(info.cx + Math.cos(ang) * info.r),
+              y: Math.round(info.cy + Math.sin(ang) * info.r),
+            },
+            b1: Math.tan(t1 / 4),
+            b2: Math.tan(t2 / 4),
+          }
+        }
+      }
+
       this.snapshot()
       const spot = at ?? { x: (e.a.x + e.b.x) / 2, y: (e.a.y + e.b.y) / 2 }
-      const p: Point = { id: newId(), x: Math.round(spot.x), y: Math.round(spot.y) }
+      const p: Point = split?.p ?? { id: newId(), x: Math.round(spot.x), y: Math.round(spot.y) }
       const idx = shape.points.findIndex((q) => q.id === e.a.id)
       shape.points.splice(idx + 1, 0, p)
+      if (split) {
+        const props = shape.edgeProps[key] ?? { ...DEFAULT_EDGE }
+        delete shape.edgeProps[key]
+        shape.edgeProps[edgeKey(e.a.id, p.id)] = { ...props, bulge: split.b1 }
+        shape.edgeProps[edgeKey(p.id, e.b.id)] = { ...props, bulge: split.b2 }
+      }
       this._invalidateTriangles(shape)
       this.activeShapeId = shape.id
       this.selectedPointId = p.id
       this.selectedEdgeKey = null
       this.persist()
       return p.id
+    },
+
+    /**
+     * Скруглить угол радиусом R — то, что в заказе пишут как «R300».
+     *
+     * Угол убирается, вместо него встают две точки касания и дуга между ними.
+     * Радиус ужимается, если стороны короткие: лучше скруглить меньше, чем
+     * порвать контур. Возвращает фактический радиус; 0 — скруглять нечего.
+     */
+    roundCorner(pointId: string, radius: number): number {
+      const shape = this._shapeOfPoint(pointId)
+      if (!shape || !shape.closed || shape.points.length < 3 || !(radius > 0)) return 0
+      const n = shape.points.length
+      const i = shape.points.findIndex((p) => p.id === pointId)
+      if (i < 0) return 0
+      const P = shape.points[i]
+      const A = shape.points[(i - 1 + n) % n]
+      const B = shape.points[(i + 1) % n]
+      const la = Math.hypot(A.x - P.x, A.y - P.y)
+      const lb = Math.hypot(B.x - P.x, B.y - P.y)
+      if (la < 1 || lb < 1) return 0
+      const ua = { x: (A.x - P.x) / la, y: (A.y - P.y) / la }
+      const ub = { x: (B.x - P.x) / lb, y: (B.y - P.y) / lb }
+      const theta = Math.acos(Math.max(-1, Math.min(1, ua.x * ub.x + ua.y * ub.y)))
+      if (!(theta > 0.05 && theta < Math.PI - 0.05)) return 0 // почти прямая
+      const half = Math.tan(theta / 2)
+      // отступ по каждой стороне — не больше половины, иначе соседние
+      // скругления съедят друг друга
+      const t = Math.min(radius / half, la / 2, lb / 2)
+      const r = Math.round(t * half)
+      if (r < 1) return 0
+      const p1: Point = { id: newId(), x: Math.round(P.x + ua.x * t), y: Math.round(P.y + ua.y * t) }
+      const p2: Point = { id: newId(), x: Math.round(P.x + ub.x * t), y: Math.round(P.y + ub.y * t) }
+      // центральный угол дуги — дополнение к углу контура; выгиб в сторону
+      // убранного угла, иначе скругление вывернется внутрь
+      let bulge = Math.tan((Math.PI - theta) / 4)
+      const toCorner = (b: number) => {
+        const m = arcMidpoint(p1, p2, b)
+        return Math.hypot(m.x - P.x, m.y - P.y)
+      }
+      if (toCorner(-bulge) < toCorner(bulge)) bulge = -bulge
+
+      this.snapshot()
+      const keepA = shape.edgeProps[edgeKey(A.id, P.id)]
+      const keepB = shape.edgeProps[edgeKey(P.id, B.id)]
+      delete shape.edgeProps[edgeKey(A.id, P.id)]
+      delete shape.edgeProps[edgeKey(P.id, B.id)]
+      shape.points.splice(i, 1, p1, p2)
+      if (keepA) shape.edgeProps[edgeKey(A.id, p1.id)] = { ...keepA, bulge: 0 }
+      if (keepB) shape.edgeProps[edgeKey(p2.id, B.id)] = { ...keepB, bulge: 0 }
+      shape.edgeProps[edgeKey(p1.id, p2.id)] = { ...DEFAULT_EDGE, bulge }
+      this._invalidateTriangles(shape)
+      this.selectedPointId = null
+      this.selectedEdgeKey = edgeKey(p1.id, p2.id)
+      this.persist()
+      return r
     },
 
     setEdgeLength(key: string, lengthMm: number) {
@@ -866,19 +996,6 @@ export const useConfigurator = defineStore('configurator', {
       this.persist()
     },
 
-    mirror(axis: 'h' | 'v') {
-      this.snapshot()
-      const s = this._active()
-      const c = centroid(s.points)
-      const flip = (p: Point): Point => ({
-        id: p.id,
-        x: axis === 'h' ? 2 * c.x - p.x : p.x,
-        y: axis === 'v' ? 2 * c.y - p.y : p.y,
-      })
-      s.points = s.points.map(flip).reverse()
-      s.innerPoints = s.innerPoints.map(flip)
-      this.persist()
-    },
 
     // ---- слои (ярусы) ---------------------------------------------------
     /** Прячет ярус с чертежа; активная фигура при этом уходит на видимый. */
@@ -1002,7 +1119,21 @@ export const useConfigurator = defineStore('configurator', {
 
     updateSettings(patch: Partial<Settings>) { this.settings = { ...this.settings, ...patch }; this.persist() },
     updateOrder(patch: Partial<Order>) { this.order = { ...this.order, ...patch }; this.persist() },
-    updatePricing(patch: Partial<Pricing>) { this.pricing = { ...this.pricing, ...patch }; this.persist() },
+    setShapeColor(id: string, hex: string) {
+      const s = this.shapes.find((x) => x.id === id)
+      const h = normalizeHex(hex)
+      if (!s || !h) return
+      this.snapshot()
+      s.colorHex = h
+      this.persist()
+    },
+    setShapeFilm(id: string, film: string) {
+      const s = this.shapes.find((x) => x.id === id)
+      if (!s || !FILMS.includes(film)) return
+      this.snapshot()
+      s.film = film
+      this.persist()
+    },
 
     // ---- shape management ----------------------------------------------
     addRectangle(w: number, h: number) {
@@ -1024,6 +1155,33 @@ export const useConfigurator = defineStore('configurator', {
       this.selectedEdgeKey = null
       this.persist()
     },
+    /**
+     * Круг: четыре точки по сторонам света и по четверти окружности между
+     * ними (bulge = tan(θ/4) при θ = 90°). Так круг остаётся обычным
+     * контуром — его можно тянуть за точки и мерить, как любой другой.
+     */
+    insertCircle(diameter: number) {
+      this.snapshot()
+      const r = Math.max(50, Math.round(diameter / 2))
+      const pts: Point[] = [
+        { id: newId(), x: 2 * r, y: r },
+        { id: newId(), x: r, y: 2 * r },
+        { id: newId(), x: 0, y: r },
+        { id: newId(), x: r, y: 0 },
+      ]
+      const s = makeShape(pts, true)
+      const quarter = Math.tan(Math.PI / 8)
+      for (let i = 0; i < pts.length; i++) {
+        s.edgeProps[edgeKey(pts[i].id, pts[(i + 1) % pts.length].id)] =
+          { ...DEFAULT_EDGE, bulge: quarter }
+      }
+      this.shapes = [s]
+      this.activeShapeId = s.id
+      this.selectedPointId = null
+      this.selectedEdgeKey = null
+      this.persist()
+    },
+
     insertRectangle(w: number, h: number) {
       this.snapshot()
       const s = makeShape(rectPoints(w, h), true)
@@ -1330,7 +1488,6 @@ export const useConfigurator = defineStore('configurator', {
         activeShapeId: this.activeShapeId,
         settings: { ...this.settings },
         order: { ...this.order },
-        pricing: { ...this.pricing },
         hiddenLevels: [...this.hiddenLevels],
       }
       return JSON.stringify(model)
@@ -1344,6 +1501,8 @@ export const useConfigurator = defineStore('configurator', {
           if (s.kind !== 'hole') s.kind = 'ceiling'
           if (!(s.level >= 1)) s.level = 1
           if (!(s.drop >= 0)) s.drop = 0
+          s.colorHex = normalizeHex(s.colorHex ?? '') ?? DEFAULT_COLOR.hex
+          if (!FILMS.includes(s.film)) s.film = DEFAULT_FILM
           for (const k of Object.keys(s.edgeProps ?? {})) {
             s.edgeProps[k] = { ...DEFAULT_EDGE, ...s.edgeProps[k] }
           }
@@ -1354,7 +1513,6 @@ export const useConfigurator = defineStore('configurator', {
       }
       if (model.settings) this.settings = { ...this.settings, ...model.settings }
       if (model.order) this.order = { ...this.order, ...model.order }
-      if (model.pricing) this.pricing = { ...this.pricing, ...model.pricing }
       this.hiddenLevels = Array.isArray(model.hiddenLevels) ? model.hiddenLevels : []
       // инструмент и выделение — эфемерны: приложение всегда открывается в «Выборе»
       if (model.tool && TOOLS.includes(model.tool as Tool)) this.tool = model.tool as Tool

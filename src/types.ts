@@ -68,6 +68,10 @@ export interface Shape {
   level: number
   /** Перепад яруса вниз от основного уровня, мм (для 3D и спецификации). */
   drop: number
+  /** Цвет полотна #rrggbb. */
+  colorHex: string
+  /** Плёнка: Глянец / Мат / Сатин / Фактура — от неё блеск в 3D. */
+  film: string
 }
 
 export interface Diagonal {
@@ -86,27 +90,10 @@ export interface Settings {
   pxPerMm: number     // canvas scale
 }
 
-/** Order metadata + rates for the cost calculation (валюта PLN as in original). */
+/** Заказ: чей потолок и в какой валюте считаем. */
 export interface Order {
   client: string
-  film: string   // тип полотна / фактура (Глянец / Мат / Сатин / Фактура)
-  color: string  // название цвета
   currency: string
-}
-
-export interface Pricing {
-  filmPerM2: number   // цена полотна за м²
-  garpunPerM: number  // гарпун за пог. м
-  seamPerM: number    // спайка/шов за пог. м
-  workPerM2: number   // монтаж за м²
-}
-
-export interface CostBreakdown {
-  film: number
-  garpun: number
-  seam: number
-  work: number
-  total: number
 }
 
 export interface SerializedModel {
@@ -115,7 +102,6 @@ export interface SerializedModel {
   activeShapeId: string
   settings: Settings
   order?: Order
-  pricing?: Pricing
   tool?: string
   hiddenLevels?: number[]
   selectedPointId?: string | null

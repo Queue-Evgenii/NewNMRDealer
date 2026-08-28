@@ -14,14 +14,14 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
-import { filmColor } from '../filmColors'
+import { rgba } from '../ceilingColors'
 import { arcMidpoint, bulgeFromPoint, sampleArc } from '../composables/useArcs'
 import type { Edge, Point } from '../types'
 
 const store = useConfigurator()
 const {
   shapesView, allPoints, edges, activeEdges, settings, selectedPointId, selectedEdgeKey,
-  tool, angles, order, activeShape, trianglesView, triPreview, measureBaseKey,
+  tool, angles, activeShape, trianglesView, triPreview, measureBaseKey,
 } = storeToRefs(store)
 
 const svgRef = ref<SVGSVGElement | null>(null)
@@ -72,16 +72,13 @@ const edgeW = computed(() => px(2))
 const thinW = computed(() => px(1))
 const fontMm = computed(() => px(coarse ? 14 : 13))
 
-function hexToRgb(hex: string) {
-  const h = hex.replace('#', '')
-  const s = h.length === 3 ? h.split('').map((c) => c + c).join('') : h
-  const n = parseInt(s, 16)
-  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }
+/**
+ * Заливка полотна — его цвет, приглушённый до подложки: чертёж читается по
+ * линиям и размерам, цвет лишь напоминает, какой потолок обсуждают.
+ */
+function fillOf(hex: string) {
+  return rgba(hex, 0.3)
 }
-const fillColor = computed(() => {
-  const { r, g, b } = hexToRgb(filmColor(order.value.film))
-  return `rgba(${r}, ${g}, ${b}, 0.22)`
-})
 
 function ptsStr(pts: { x: number; y: number }[]) { return pts.map((p) => `${p.x},${p.y}`).join(' ') }
 function mid(a: Point, b: Point) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } }
@@ -320,6 +317,7 @@ function snapDrag(id: string, m: { x: number; y: number }) {
   if (by !== null) { y = by; guideY.value = by }
 
   // 3. угол кратно 15° от предыдущей вершины
+  let byAngle = false
   if (bx === null || by === null) {
     const idx = shape.points.findIndex((p) => p.id === id)
     const n = shape.points.length
@@ -332,12 +330,13 @@ function snapDrag(id: string, m: { x: number; y: number }) {
         const len = Math.hypot(x - prev.x, y - prev.y)
         x = prev.x + Math.cos(snapped) * len
         y = prev.y + Math.sin(snapped) * len
+        byAngle = true
       }
     }
   }
 
   // 4. шаг сетки — если ничего другого не сработало
-  if (bx === null && by === null) {
+  if (bx === null && by === null && !byAngle) {
     const g = settings.value.gridStep || 1
     x = Math.round(x / g) * g
     y = Math.round(y / g) * g
@@ -778,7 +777,7 @@ onBeforeUnmount(() => {
         :points="ptsStr(sh.shrunk)"
         class="shrink" :stroke-width="thinW" :stroke-dasharray="`${px(6)} ${px(6)}`" />
       <path v-if="sh.closed && sh.kind === 'ceiling'" :d="fillPath(sh)" fill-rule="evenodd"
-        :fill="fillColor" stroke="none" :class="{ inactive: !sh.active }" />
+        :fill="fillOf(sh.colorHex)" stroke="none" :class="{ inactive: !sh.active }" />
       <path v-else-if="sh.closed" :d="pathOf(sh.outline, true)" class="hole-fill"
         :class="{ inactive: !sh.active }" />
       <path v-else-if="sh.points.length > 1" :d="pathOf(sh.points)" class="open-path"

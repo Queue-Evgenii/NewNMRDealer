@@ -37,7 +37,7 @@ describe('панель инструментов', () => {
   it('каждая плитка — иконка плюс подпись', () => {
     const w = mountWith(Toolbar)
     const tiles = w.findAll('.tile')
-    expect(tiles.length).toBeGreaterThanOrEqual(14)
+    expect(tiles.length).toBeGreaterThanOrEqual(12)
     for (const t of tiles) {
       expect(t.find('svg').exists(), `плитка «${t.text()}» без иконки`).toBe(true)
       expect(t.find('span').exists(), 'плитка без подписи').toBe(true)
@@ -58,7 +58,7 @@ describe('панель инструментов', () => {
     expect(toggles.length).toBeGreaterThan(0)
     expect(w.findAll('.tile.toggle.on').length).toBe(
       [store.settings.showGrid, store.settings.showMeasures, store.settings.showTriangles,
-        store.settings.snap, store.activeShape.closed].filter(Boolean).length,
+        store.settings.snap].filter(Boolean).length,
     )
   })
 })

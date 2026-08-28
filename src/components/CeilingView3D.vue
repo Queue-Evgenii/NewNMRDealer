@@ -4,17 +4,19 @@ import { storeToRefs } from 'pinia'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { useConfigurator } from '../stores/configurator'
-import { filmColor } from '../filmColors'
 
 const store = useConfigurator()
 const { shapesView, settings, order } = storeToRefs(store)
 
-// material finish per film type
+/**
+ * Блеск по типу плёнки. Полотно непрозрачное: прозрачный глянец пропускал
+ * тёмный фон сцены, и цвет выглядел грязнее, чем выбран.
+ */
 function filmFinish(film: string) {
-  if (film === 'Мат') return { metalness: 0.0, roughness: 0.95, opacity: 1 }
-  if (film === 'Сатин') return { metalness: 0.1, roughness: 0.55, opacity: 0.95 }
-  if (film === 'Фактура') return { metalness: 0.05, roughness: 0.7, opacity: 1 }
-  return { metalness: 0.35, roughness: 0.12, opacity: 0.9 } // Глянец
+  if (film === 'Мат') return { metalness: 0.0, roughness: 0.95 }
+  if (film === 'Сатин') return { metalness: 0.08, roughness: 0.55 }
+  if (film === 'Фактура') return { metalness: 0.05, roughness: 0.7 }
+  return { metalness: 0.25, roughness: 0.15 } // Глянец
 }
 
 const host = ref<HTMLDivElement | null>(null)
@@ -25,6 +27,8 @@ let camera: THREE.PerspectiveCamera
 let controls: OrbitControls
 let group: THREE.Group | null = null
 let raf = 0
+/** Габариты, под которые уже наведена камера. */
+let framedBounds = ''
 let ro: ResizeObserver | null = null
 
 const THICK = 40 // mm — толщина полотна на виде
@@ -34,13 +38,6 @@ const THICK = 40 // mm — толщина полотна на виде
  * полотна, и сцена выглядела как «пол в клеточку».
  */
 const ROOM_H = 2700
-
-/** Затемняет цвет полотна: каждый следующий ярус чуть темнее предыдущего. */
-function levelTint(hex: string, level: number): THREE.Color {
-  const c = new THREE.Color(hex)
-  const k = Math.max(0.55, 1 - (level - 1) * 0.14)
-  return c.multiplyScalar(k)
-}
 
 function disposeGroup() {
   if (!group) return
@@ -63,12 +60,23 @@ function buildGeometry() {
   )
   if (!closedShapes.length) return
 
-  // centre all shapes around a common origin (stable camera framing)
-  let cx = 0, cy = 0, count = 0
-  for (const s of closedShapes) for (const p of s.outline) { cx += p.x; cy += p.y; count++ }
-  cx /= count || 1; cy /= count || 1
+  /*
+   * Центр сцены — середина габаритов, а не среднее по вершинам: у скруглённой
+   * стороны точек в разы больше, чем у прямой, и среднее утаскивало потолок
+   * в сторону от центра сетки.
+   */
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+  for (const s of closedShapes) {
+    for (const p of s.outline) {
+      if (p.x < minX) minX = p.x
+      if (p.x > maxX) maxX = p.x
+      if (p.y < minY) minY = p.y
+      if (p.y > maxY) maxY = p.y
+    }
+  }
+  const cx = (minX + maxX) / 2
+  const cy = (minY + maxY) / 2
 
-  const finish = filmFinish(order.value.film)
   group = new THREE.Group()
 
   for (const s of closedShapes) {
@@ -100,12 +108,12 @@ function buildGeometry() {
     // ярус опущен вниз; совпадающие полотна разводим на волос, иначе мерцают
     geom.translate(0, -s.drop - closedShapes.indexOf(s) * 0.4, 0)
 
+    // у каждого полотна своя плёнка: блеск и прозрачность берём с него
+    const finish = filmFinish(s.film)
     const mat = new THREE.MeshStandardMaterial({
-      color: levelTint(filmColor(order.value.film), s.level),
+      color: new THREE.Color(s.colorHex),
       metalness: finish.metalness,
       roughness: finish.roughness,
-      transparent: finish.opacity < 1,
-      opacity: finish.opacity,
       side: THREE.DoubleSide,
     })
     group.add(new THREE.Mesh(geom, mat))
@@ -141,7 +149,13 @@ function buildGeometry() {
   }
 
   scene.add(group)
-  frameCamera()
+  // камеру наводим только когда изменились сами габариты: смена цвета или
+  // плёнки не должна сбивать поворот, который зритель только что выставил
+  const bounds = [minX, maxX, minY, maxY].map(Math.round).join(':')
+  if (bounds !== framedBounds) {
+    framedBounds = bounds
+    frameCamera()
+  }
 }
 
 function frameCamera() {
@@ -150,10 +164,14 @@ function frameCamera() {
   const size = box.getSize(new THREE.Vector3())
   const centre = box.getCenter(new THREE.Vector3())
   const radius = Math.max(size.x, size.z, size.y) || 1000
+  // расстояние считаем от угла обзора, и на узком экране (телефон стоймя)
+  // отодвигаем камеру — иначе кадр режет потолок по бокам
+  const fov = (camera.fov * Math.PI) / 180
+  const dist = (radius / Math.tan(fov / 2)) * (camera.aspect < 1 ? 1 / camera.aspect : 1)
   controls.target.copy(centre)
-  camera.position.set(centre.x + radius * 0.9, centre.y + radius * 1.2, centre.z + radius * 1.4)
+  camera.position.copy(centre).addScaledVector(new THREE.Vector3(0.9, 1.2, 1.4).normalize(), dist)
   camera.near = radius / 100
-  camera.far = radius * 20
+  camera.far = dist * 20
   camera.updateProjectionMatrix()
   controls.update()
 }
@@ -161,8 +179,14 @@ function frameCamera() {
 function resize() {
   if (!host.value) return
   const { clientWidth: w, clientHeight: h } = host.value
-  renderer.setSize(w, h, false)
-  camera.aspect = w / Math.max(1, h)
+  if (!w || !h) return
+  /*
+   * Размер задаём вместе со стилем холста. Без него при devicePixelRatio > 1
+   * холст получал css-размер буфера — вдвое больше блока, — и видимой
+   * оставалась левая верхняя четверть кадра: сцена выглядела смещённой.
+   */
+  renderer.setSize(w, h)
+  camera.aspect = w / h
   camera.updateProjectionMatrix()
 }
 
@@ -178,21 +202,24 @@ onMounted(() => {
   controls = new OrbitControls(camera, renderer.domElement)
   controls.enableDamping = true
 
-  scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x1a2338, 0.75))
-  const dir = new THREE.DirectionalLight(0xffffff, 1.0)
+  // потолок смотрят снизу, поэтому низ освещён не хуже верха: раньше нижняя
+  // сторона уходила в цвет «земли» полусферы и полотно выглядело затемнённым
+  scene.add(new THREE.HemisphereLight(0xeaf1ff, 0xaab6cc, 0.85))
+  const dir = new THREE.DirectionalLight(0xffffff, 0.75)
   dir.position.set(1, 2, 1.5)
   scene.add(dir)
-  const fill = new THREE.DirectionalLight(0x9fc0ff, 0.35)
-  fill.position.set(-1.5, -0.5, -1)
-  scene.add(fill)
+  const under = new THREE.DirectionalLight(0xffffff, 0.55)
+  under.position.set(-0.6, -1.6, 0.8)
+  scene.add(under)
 
   // сетка — это пол, поэтому она внизу, а не в плоскости полотна
   const grid = new THREE.GridHelper(30000, 60, 0x243049, 0x1a2338)
   grid.position.y = -ROOM_H
   scene.add(grid)
 
-  buildGeometry()
+  // размер сначала: камера наводится с учётом пропорций окна
   resize()
+  buildGeometry()
 
   ro = new ResizeObserver(resize)
   ro.observe(host.value!)
@@ -227,4 +254,6 @@ onBeforeUnmount(() => {
   height: 100%;
   overflow: hidden;
 }
+/* холст создаёт three, поэтому размер ему задаём отсюда — на всякий случай */
+.view3d :deep(canvas) { display: block; width: 100%; height: 100%; }
 </style>

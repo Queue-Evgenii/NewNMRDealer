@@ -39,6 +39,7 @@ export {
   Layers as IconLogo,
   Power as IconLogout,
   RectangleHorizontal as IconRect,
+  Circle as IconCircle,
   Spline as IconFreeform,
   Eye as IconShow,
   EyeOff as IconHide,

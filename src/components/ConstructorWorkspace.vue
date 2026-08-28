@@ -15,8 +15,9 @@ import CeilingView3D from './CeilingView3D.vue'
 import NewCeilingDialog from './NewCeilingDialog.vue'
 import HelpOverlay from './HelpOverlay.vue'
 import ProjectsPanel from './ProjectsPanel.vue'
+import ColorDialog from './ColorDialog.vue'
 import { savedWhen } from '../composables/useWhen'
-import { IconSaved, IconProjects, IconPanelClose, IconPanelOpen, IconChevronDown } from '../icons'
+import { IconSaved, IconProjects, IconPanelClose, IconPanelOpen, IconChevronDown, IconColors } from '../icons'
 import { useShortcuts } from '../composables/useShortcuts'
 import { decodeModel } from '../composables/useShareLink'
 import { IconStepBack, IconCheck, IconClose } from '../icons'
@@ -77,6 +78,8 @@ watch(tab, (v) => { try { localStorage.setItem(TAB_KEY, v) } catch { /* ignore *
 const canvasRef = ref<InstanceType<typeof CeilingCanvas2D> | null>(null)
 const showNew = ref(false)
 const showHelp = ref(false)
+// окно цвета: красим активное полотно
+const showColor = ref(false)
 
 const drawPoints = computed(() => (tool.value === 'draw' ? activeShape.value.points.length : 0))
 
@@ -171,6 +174,12 @@ const hint = computed(() => {
           </button>
         </div>
 
+        <!-- в 3D на телефоне панели нет: цвет должен остаться под рукой -->
+        <button v-if="phone && tab === '3d'" class="color-fab" :style="{ '--chip': activeShape.colorHex }"
+          title="Цвет полотна" @click="showColor = true">
+          <IconColors :size="20" :stroke-width="1.75" />
+        </button>
+
         <template v-if="phone && tab === '2d'">
           <MobileBar @fit="canvasRef?.fit()" @zoom="(f) => canvasRef?.zoomBy(f)"
             @new="showNew = true" @help="showHelp = true" />
@@ -182,15 +191,16 @@ const hint = computed(() => {
       <template v-if="phone">
         <PanelSheet v-if="tab === '2d'">
           <TrianglesPanel v-if="tool === 'measure'" />
-          <SidePanel v-else show-view />
+          <SidePanel v-else show-view @color="showColor = true" />
         </PanelSheet>
       </template>
       <template v-else>
         <TrianglesPanel v-if="tool === 'measure'" />
-        <SidePanel v-else />
+        <SidePanel v-else @color="showColor = true" />
       </template>
     </div>
 
+    <ColorDialog v-if="showColor" :shape-id="activeShape.id" @close="showColor = false" />
     <NewCeilingDialog v-if="showNew" @close="showNew = false" />
     <HelpOverlay v-if="showHelp" @close="showHelp = false" />
   </div>
@@ -261,6 +271,18 @@ const hint = computed(() => {
 .draw-hud button:disabled { opacity: 0.35; cursor: default; }
 
 .mode-float { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%); z-index: 6; }
+.color-fab {
+  position: absolute; top: 10px; left: 10px; z-index: 5;
+  display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 12px; cursor: pointer;
+  background: rgba(13, 19, 32, 0.94); border: 1px solid #2a3550; color: #cbd5e1;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+.color-fab::after {
+  content: ''; position: absolute; left: 50%; bottom: 5px; transform: translateX(-50%);
+  width: 20px; height: 3px; border-radius: 2px;
+  background: var(--chip); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
 
 .shared {
   position: absolute; left: 50%; top: 10px; transform: translateX(-50%);

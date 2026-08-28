@@ -6,12 +6,12 @@ import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import ModeSwitch from './ModeSwitch.vue'
 import {
-  IconUndo, IconRedo, IconNewShape, IconMirror, IconContour, IconDelete,
+  IconUndo, IconRedo, IconDelete,
   IconGrid, IconDimensions, IconTriangles, IconSnap, IconFit, IconPlus, IconHelp,
 } from '../icons'
 
 const store = useConfigurator()
-const { settings, activeShape, past, future, selectedPointId, selectedEdgeKey } = storeToRefs(store)
+const { settings, past, future, selectedPointId, selectedEdgeKey } = storeToRefs(store)
 
 defineEmits<{ (e: 'fit'): void; (e: 'new'): void; (e: 'help'): void }>()
 
@@ -39,16 +39,6 @@ const delTitle = () => selectedPointId.value
       </button>
       <button class="tile" :disabled="!future.length" title="Повторить (Ctrl+Y)" @click="store.redo()">
         <IconRedo :size="18" :stroke-width="1.75" /><span>Повтор</span>
-      </button>
-      <button class="tile" title="Новая фигура — рисовать контур" @click="store.beginDraw()">
-        <IconNewShape :size="18" :stroke-width="1.75" /><span>Фигура</span>
-      </button>
-      <button class="tile" title="Отразить активную фигуру" @click="store.mirror('h')">
-        <IconMirror :size="18" :stroke-width="1.75" /><span>Зеркало</span>
-      </button>
-      <button v-if="!activeShape.triangles.length" class="tile toggle" :class="{ on: activeShape.closed }"
-        title="Замкнуть / разомкнуть контур (C)" @click="store.toggleClosed()">
-        <IconContour :size="18" :stroke-width="1.75" /><span>Контур</span>
       </button>
       <button class="tile danger" :title="delTitle()" @click="del()">
         <IconDelete :size="18" :stroke-width="1.75" /><span>Удалить</span>

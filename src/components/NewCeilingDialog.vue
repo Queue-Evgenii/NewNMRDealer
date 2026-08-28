@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useConfigurator } from '../stores/configurator'
 import { useProjects } from '../stores/projects'
-import { IconRect, IconContour, IconFreeform, IconWizard } from '../icons'
+import { IconRect, IconContour, IconFreeform, IconWizard, IconCircle } from '../icons'
 import ShapeWizard from './ShapeWizard.vue'
 import type { WallSpec } from '../composables/useWizard'
 
@@ -11,9 +11,10 @@ const projects = useProjects()
 const name = ref('')
 const emit = defineEmits<{ (e: 'close'): void }>()
 
-const kind = ref<'rect' | 'lshape' | 'wizard' | 'empty'>('rect')
+const kind = ref<'rect' | 'lshape' | 'circle' | 'wizard' | 'empty'>('rect')
 const w = ref(3000)
 const h = ref(2000)
+const d = ref(2000)
 const cw = ref(1200)
 const ch = ref(800)
 
@@ -22,6 +23,7 @@ function create() {
   projects.create(name.value)
   if (kind.value === 'rect') store.insertRectangle(w.value, h.value)
   else if (kind.value === 'lshape') store.insertLShape(w.value, h.value, cw.value, ch.value)
+  else if (kind.value === 'circle') store.insertCircle(d.value)
   else store.reset('empty')
   emit('close')
 }
@@ -51,6 +53,9 @@ function createFromWizard(walls: WallSpec[]) {
         <button :class="{ on: kind === 'lshape' }" @click="kind = 'lshape'">
           <div class="ico"><IconContour :size="26" :stroke-width="1.5" /></div><span>Г-образный</span>
         </button>
+        <button :class="{ on: kind === 'circle' }" @click="kind = 'circle'">
+          <div class="ico"><IconCircle :size="26" :stroke-width="1.5" /></div><span>Круг</span>
+        </button>
         <button :class="{ on: kind === 'wizard' }" @click="kind = 'wizard'">
           <div class="ico"><IconWizard :size="26" :stroke-width="1.5" /></div><span>Мастер</span>
         </button>
@@ -60,6 +65,10 @@ function createFromWizard(walls: WallSpec[]) {
       </div>
 
       <ShapeWizard v-if="kind === 'wizard'" @submit="createFromWizard" />
+
+      <div v-else-if="kind === 'circle'" class="fields">
+        <label>Диаметр, мм <input type="number" inputmode="decimal" v-model.number="d" min="200" step="100" /></label>
+      </div>
 
       <div v-else-if="kind !== 'empty'" class="fields">
         <label>Ширина, мм <input type="number" inputmode="decimal" v-model.number="w" min="100" step="50" /></label>
