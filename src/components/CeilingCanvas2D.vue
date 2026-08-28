@@ -165,9 +165,8 @@ const arcHandles = computed(() =>
     .map((e) => ({ key: e.key, ...arcMidpoint(e.a, e.b, e.props.bulge) })))
 
 /**
- * Точка на стороне под курсором. В «Выборе» ручка «+» едет по стороне за
- * курсором — видно, куда встанет новый угол. В «Рисовать» это подсказка
- * привязки: новая точка ляжет ровно на существующую стену.
+ * Точка на стороне под курсором — подсказка привязки в «Рисовать»: новая
+ * точка ляжет ровно на существующую стену.
  */
 const hoverEdge = ref<{ key: string; x: number; y: number } | null>(null)
 
@@ -183,12 +182,10 @@ function projectOnEdge(m: { x: number; y: number }, a: Point, b: Point) {
   return { x, y, d: Math.hypot(m.x - x, m.y - y) }
 }
 
-/** Ищет сторону под курсором среди тех, куда вообще можно врезать точку. */
+/** Ищет стену под курсором — на неё сядет новая точка в «Рисовать». */
 function findHoverEdge(m: { x: number; y: number }) {
-  const list = tool.value === 'draw'
-    ? visibleEdges.value
-    : activeEdges.value.filter((e) => !e.props.bulge)
-  const thr = px(tool.value === 'draw' ? (coarse ? 20 : 14) : HIT_EDGE * 1.4)
+  const list = visibleEdges.value
+  const thr = px(coarse ? 20 : 14)
   let best: { key: string; x: number; y: number; d: number } | null = null
   for (const e of list) {
     if (e.props.bulge) continue // у дуги своя ручка — кривизны
@@ -570,7 +567,7 @@ function onPointerMove(ev: PointerEvent) {
   if (!press) {
     const m = clientToMm(ev.clientX, ev.clientY)
     if (tool.value === 'draw') cursorMm.value = m
-    if (tool.value === 'draw' || tool.value === 'select') findHoverEdge(m)
+    if (tool.value === 'draw') findHoverEdge(m)
     else hoverEdge.value = null
     return
   }
