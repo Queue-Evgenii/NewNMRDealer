@@ -16,6 +16,7 @@ import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import { rgba } from '../ceilingColors'
 import { arcMidpoint, bulgeFromPoint, sampleArc } from '../composables/useArcs'
+import { cornerLabel } from '../labels'
 import type { Edge, Point } from '../types'
 
 const store = useConfigurator()
@@ -453,22 +454,21 @@ function outwardAt(prev: XY, p: XY, next: XY): { x: number; y: number } {
   return { x: -bx / bl, y: -by / bl }
 }
 
-/** Подписи углов, заданные в мастере. */
+/**
+ * Буквы углов активной фигуры: «А», «Б», «В»… Ими называют стороны в панели
+ * («Сторона АБ») и диктуют размеры на замере. Имя из мастера сильнее буквы.
+ * У остальных фигур подписей нет — иначе буквы задвоятся и перестанут помогать.
+ */
 const cornerLabels = computed(() => {
-  const out: { id: string; x: number; y: number; text: string }[] = []
-  for (const sh of visibleShapes.value) {
-    const pts = sh.points
-    const n = pts.length
-    if (n < 3) continue
-    for (let i = 0; i < n; i++) {
-      const p = pts[i]
-      if (!p.name) continue
-      const dir = outwardAt(pts[(i - 1 + n) % n], p, pts[(i + 1) % n])
-      const off = px(coarse ? 24 : 20)
-      out.push({ id: p.id, x: p.x + dir.x * off, y: p.y + dir.y * off, text: p.name })
-    }
-  }
-  return out
+  const s = activeShape.value
+  const pts = s?.points ?? []
+  const n = pts.length
+  if (n < 3) return []
+  const off = px(coarse ? 24 : 20)
+  return pts.map((p, i) => {
+    const dir = outwardAt(pts[(i - 1 + n) % n], p, pts[(i + 1) % n])
+    return { id: p.id, x: p.x + dir.x * off, y: p.y + dir.y * off, text: cornerLabel(i, p.name) }
+  })
 })
 
 function isDrawStart(pid: string) {
@@ -854,9 +854,11 @@ onBeforeUnmount(() => {
     <circle v-if="tool === 'draw' && hoverEdge" :cx="hoverEdge.x" :cy="hoverEdge.y"
       :r="vertexR" class="edge-hint" :stroke-width="thinW * 2" />
 
-    <!-- имена углов из мастера -->
-    <text v-for="c in cornerLabels" :key="'cn' + c.id" :x="c.x" :y="c.y"
-      class="corner-name" :font-size="fontMm">{{ c.text }}</text>
+    <!-- буквы углов: ими называют стороны в панели и на замере -->
+    <g v-if="settings.showMeasures">
+      <text v-for="c in cornerLabels" :key="'cn' + c.id" :x="c.x" :y="c.y"
+        class="corner-name" :font-size="fontMm">{{ c.text }}</text>
+    </g>
 
     <!-- цель сварки -->
     <circle v-if="weldTarget" :cx="weldTarget.x" :cy="weldTarget.y" :r="vertexR * 2"

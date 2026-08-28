@@ -12,6 +12,7 @@ import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import { CURRENCY } from '../pricing'
 import { arcSagitta } from '../composables/useArcs'
+import { cornerLabel, sideLabel } from '../labels'
 import {
   IconGrid, IconDimensions, IconTriangles, IconSnap,
   IconUndo, IconRedo, IconDraw, IconDelete,
@@ -24,11 +25,36 @@ const emit = defineEmits<{ (e: 'color'): void }>()
 const store = useConfigurator()
 const {
   totals, activeStats, activeShape, shapes, shapeStats, hostOfActive,
-  edges, selectedEdgeKey, settings, past, future, selectedPointId,
+  activeEdges, selectedEdgeKey, settings, past, future, selectedPointId, selectedPoint, angles,
 } = storeToRefs(store)
 
-/** Выбранная сторона: у неё задают скругление — стрелку дуги от хорды. */
-const selectedEdge = computed(() => edges.value.find((e) => e.key === selectedEdgeKey.value) ?? null)
+/** Выбранный угол: буква, координаты и градус — всё правится числами. */
+const cornerIndex = computed(() =>
+  activeShape.value.points.findIndex((p) => p.id === selectedPointId.value))
+const cornerName = computed(() => (cornerIndex.value < 0
+  ? ''
+  : cornerLabel(cornerIndex.value, activeShape.value.points[cornerIndex.value].name)))
+const cornerDeg = computed(() => angles.value.find((a) => a.id === selectedPointId.value)?.deg ?? null)
+function moveCorner(x: number, y: number) {
+  if (selectedPoint.value) store.movePoint(selectedPoint.value.id, x, y)
+}
+
+/** Все стороны фигуры списком: подпись «АБ» и длина, которую диктуют. */
+const sides = computed(() => {
+  const pts = activeShape.value.points
+  return activeEdges.value.map((e) => ({
+    key: e.key,
+    name: sideLabel(e.i1 - 1, e.i2 - 1, pts[e.i1 - 1]?.name, pts[e.i2 - 1]?.name),
+    length: Math.round(e.length),
+    arc: !!e.props.bulge,
+  }))
+})
+const selectedEdge = computed(() => activeEdges.value.find((e) => e.key === selectedEdgeKey.value) ?? null)
+const sideName = computed(() => sides.value.find((s) => s.key === selectedEdgeKey.value)?.name ?? '')
+function setSide(key: string, value: string) {
+  const mm = Number(value)
+  if (mm > 0) store.setEdgeLength(key, mm)
+}
 const sagitta = computed(() => (selectedEdge.value
   ? Math.round(arcSagitta(selectedEdge.value.a, selectedEdge.value.b, selectedEdge.value.props.bulge))
   : 0))
@@ -61,17 +87,41 @@ const money = (v: number) => v.toFixed(0)
       <p v-else-if="openShapes" class="warn">Есть незамкнутые контуры — они в расчёт не идут.</p>
     </section>
 
-    <!-- угол: скругление — самая частая правка контура -->
-    <section v-if="selectedPointId">
-      <h3>Угол</h3>
-      <label class="row"><span>Радиус, мм</span>
-        <input type="number" inputmode="decimal" min="10" step="10" v-model.number="cornerR" /></label>
-      <button @click="roundCorner">Скруглить угол</button>
+    <!-- стороны фигуры: подпись и длина, как в листе замера -->
+    <section v-if="sides.length">
+      <h3>Стороны</h3>
+      <ul class="sides">
+        <li v-for="s in sides" :key="s.key" :class="{ on: s.key === selectedEdgeKey }">
+          <button class="pick" @click="store.selectEdge(s.key)">{{ s.name }}</button>
+          <input type="number" inputmode="decimal" min="1" step="10" :value="s.length"
+            @focus="store.selectEdge(s.key)"
+            @change="setSide(s.key, ($event.target as HTMLInputElement).value)" />
+          <span class="unit">мм</span>
+        </li>
+      </ul>
     </section>
 
-    <!-- сторона: выгнуть дугой (арка, овал) -->
+    <!-- угол: координаты и скругление числами -->
+    <section v-if="selectedPoint">
+      <h3>Угол {{ cornerName }}</h3>
+      <div v-if="cornerDeg !== null" class="stat"><span>Раствор</span><b>{{ cornerDeg }}°</b></div>
+      <label class="row"><span>X, мм</span>
+        <input type="number" inputmode="decimal" step="10" :value="selectedPoint.x"
+          @change="moveCorner(Number(($event.target as HTMLInputElement).value), selectedPoint.y)" /></label>
+      <label class="row"><span>Y, мм</span>
+        <input type="number" inputmode="decimal" step="10" :value="selectedPoint.y"
+          @change="moveCorner(selectedPoint.x, Number(($event.target as HTMLInputElement).value))" /></label>
+      <label class="row"><span>Скругление R, мм</span>
+        <input type="number" inputmode="decimal" min="10" step="10" v-model.number="cornerR" /></label>
+      <div class="two">
+        <button @click="roundCorner">Скруглить</button>
+        <button class="danger" @click="store.deleteSelected()">Удалить угол</button>
+      </div>
+    </section>
+
+    <!-- сторона: длина и прогиб дуги — то же, что диктуют на замере -->
     <section v-if="selectedEdge">
-      <h3>Сторона</h3>
+      <h3>Сторона {{ sideName }}</h3>
       <label class="row"><span>Прогиб дуги, мм</span>
         <input type="number" inputmode="decimal" step="10" :value="sagitta"
           @change="store.setEdgeSagitta(selectedEdge.key, Number(($event.target as HTMLInputElement).value))" /></label>
@@ -176,6 +226,17 @@ h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing
   margin: 0 0 8px; padding: 8px 10px; border-radius: 6px; font-size: 12px; line-height: 1.45;
   background: #2a2214; border: 1px solid #4a3a1c; color: #ffce7a;
 }
+.sides { list-style: none; margin: 0; padding: 0; }
+.sides li {
+  display: flex; align-items: center; gap: 8px; padding: 3px 0;
+}
+.sides li.on .pick { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.sides .pick {
+  width: 52px; flex: 0 0 auto; margin: 0; padding: 8px 0; text-align: center;
+  font-variant-numeric: tabular-nums; font-size: 13px;
+}
+.sides input { flex: 1 1 auto; min-width: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.sides .unit { flex: 0 0 auto; font-size: 12px; color: #7f90b0; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 13px; }
 .row input { width: 110px; }
 input[type='number'] {
