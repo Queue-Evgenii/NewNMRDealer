@@ -83,8 +83,8 @@ const delTitle = () => selectedPointId.value
   flex-wrap: wrap;
   gap: 10px;
   padding: 8px 12px;
-  background: #101828;
-  border-bottom: 1px solid #223;
+  background: var(--bar);
+  border-bottom: 1px solid var(--border-soft);
 }
 .spacer { flex: 1; }
 </style>

@@ -56,4 +56,5 @@ export {
   Wand2 as IconWizard,
   TriangleAlert as IconWarning,
   Clock3 as IconSaved,
+  Settings as IconSettings,
 } from 'lucide-vue-next'

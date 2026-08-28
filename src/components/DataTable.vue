@@ -71,22 +71,22 @@ function pick(row: T) {
 
 <style scoped>
 .dt { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.dt-toolbar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid #1b2740; }
+.dt-toolbar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border-soft); }
 .search {
-  flex: 1; max-width: 320px; background: #0d1320; border: 1px solid #2a3550; color: #e8eefc;
+  flex: 1; max-width: 320px; background: var(--field); border: 1px solid var(--border); color: var(--text-strong);
   border-radius: 7px; padding: 8px 11px; font-size: 14px;
 }
-.count { color: #7f90b0; font-size: 13px; }
+.count { color: var(--muted-2); font-size: 13px; }
 .dt-scroll { flex: 1; overflow: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 thead th {
-  position: sticky; top: 0; background: #101a2e; color: #8fa3c4; text-align: left;
-  padding: 9px 12px; font-weight: 600; border-bottom: 1px solid #223; white-space: nowrap;
+  position: sticky; top: 0; background: var(--bar); color: var(--muted); text-align: left;
+  padding: 9px 12px; font-weight: 600; border-bottom: 1px solid var(--border-soft); white-space: nowrap;
 }
-tbody td { padding: 8px 12px; border-bottom: 1px solid #141d30; color: #cdd8ee; white-space: nowrap; }
+tbody td { padding: 8px 12px; border-bottom: 1px solid var(--row); color: var(--text); white-space: nowrap; }
 tbody tr { cursor: pointer; }
-tbody tr:hover { background: #131d33; }
-tbody tr.sel { background: #16274a; }
-.empty { text-align: center; color: #6b7ea0; padding: 30px; }
+tbody tr:hover { background: var(--row-hover); }
+tbody tr.sel { background: var(--row-sel); }
+.empty { text-align: center; color: var(--muted-2); padding: 30px; }
 .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: middle; border: 1px solid #0006; }
 </style>

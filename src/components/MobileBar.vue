@@ -51,10 +51,10 @@ defineEmits<{
 .fab {
   display: flex; align-items: center; justify-content: center;
   width: 44px; height: 44px; border-radius: 12px; cursor: pointer;
-  background: rgba(13, 19, 32, 0.94); border: 1px solid #2a3550; color: #cbd5e1;
+  background: rgba(13, 19, 32, 0.94); border: 1px solid var(--border); color: var(--text);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
-.fab.primary { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.fab.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .fab:disabled { opacity: 0.32; }
 .fab:active:not(:disabled) { transform: scale(0.94); }
 </style>

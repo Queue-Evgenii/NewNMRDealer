@@ -45,12 +45,12 @@ const cards = [
 <style scoped>
 .dash { padding: 26px; }
 h1 { margin: 0; font-size: 22px; }
-.sub { color: #8fa3c4; margin: 6px 0 22px; font-size: 14px; }
+.sub { color: var(--muted); margin: 6px 0 22px; font-size: 14px; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; max-width: 900px; }
-.card { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding: 18px; background: #121a2c; border: 1px solid #263250; border-radius: 14px; cursor: pointer; color: #e8eefc; text-align: left; }
-.card:hover { border-color: #2f6fed; }
-.card.accent { background: #16233f; }
-.icon { display: flex; color: #7fa9ff; }
+.card { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding: 18px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px; cursor: pointer; color: var(--text-strong); text-align: left; }
+.card:hover { border-color: var(--accent); }
+.card.accent { background: var(--accent-soft); }
+.icon { display: flex; color: var(--accent-2); }
 .num { font-size: 26px; font-weight: 700; }
-.label { color: #8fa3c4; font-size: 13px; }
+.label { color: var(--muted); font-size: 13px; }
 </style>

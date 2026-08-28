@@ -98,7 +98,7 @@ function createFromWizard(walls: WallSpec[]) {
 }
 .dialog {
   width: 440px; max-width: 100%; max-height: 92vh; overflow-y: auto;
-  background: #141c2e; border: 1px solid #263250;
+  background: var(--surface); border: 1px solid var(--border-strong);
   border-radius: 14px; padding: 22px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 .dialog.wide { width: 720px; }
@@ -108,30 +108,30 @@ function createFromWizard(walls: WallSpec[]) {
   .kinds { grid-template-columns: 1fr 1fr; }
 }
 h2 { margin: 0 0 4px; font-size: 19px; }
-.sub { margin: 0 0 16px; color: #8fa3c4; font-size: 13px; }
-.name { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; font-size: 12px; color: #8fa3c4; }
+.sub { margin: 0 0 16px; color: var(--muted); font-size: 13px; }
+.name { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; font-size: 12px; color: var(--muted); }
 .name input {
-  background: #0d1320; border: 1px solid #2a3550; color: #e8eefc;
+  background: var(--field); border: 1px solid var(--border); color: var(--text-strong);
   border-radius: 8px; padding: 9px 10px; font-size: 14px;
 }
 .kinds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
 .kinds button {
   display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 6px;
-  background: #0f1728; border: 1px solid #263250; border-radius: 10px; color: #cbd5e1;
+  background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; color: var(--text);
   cursor: pointer; font-size: 12px;
 }
-.kinds button.on { border-color: #2f6fed; background: #16233f; color: #fff; }
+.kinds button.on { border-color: var(--accent); background: var(--accent-soft); color: #fff; }
 .ico { font-size: 24px; }
 .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-.fields label { min-width: 0; display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: #8fa3c4; }
+.fields label { min-width: 0; display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--muted); }
 .fields input {
   min-width: 0; /* иначе поля не дают колонкам сжаться и диалог вылезает за экран */
-  background: #0d1320; border: 1px solid #2a3550; color: #e8eefc; border-radius: 7px;
+  background: var(--field); border: 1px solid var(--border); color: var(--text-strong); border-radius: 7px;
   padding: 9px 10px; font-size: 15px;
 }
-.hint { background: #0f1728; border: 1px solid #263250; border-radius: 8px; padding: 12px; font-size: 13px; color: #a9b8d4; }
+.hint { background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 8px; padding: 12px; font-size: 13px; color: var(--text-2); }
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
-.actions button { padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; border: 1px solid #2a3550; }
-.ghost { background: transparent; color: #cbd5e1; }
-.primary { background: #2f6fed; border-color: #2f6fed; color: #fff; font-weight: 600; }
+.actions button { padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; border: 1px solid var(--border); }
+.ghost { background: transparent; color: var(--text); }
+.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 </style>

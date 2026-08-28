@@ -33,7 +33,7 @@ const modes = [
 /* плавающий вариант для телефона — та же сетка, другая подложка */
 .modes.floating {
   background: rgba(13, 19, 32, 0.96);
-  border-color: #2a3550;
+  border-color: var(--border);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 </style>

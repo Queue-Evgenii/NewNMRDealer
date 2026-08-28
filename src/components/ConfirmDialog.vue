@@ -48,28 +48,28 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 }
 .dialog {
   width: 380px; max-width: 100%;
-  background: #141c2e; border: 1px solid #263250;
+  background: var(--surface); border: 1px solid var(--border-strong);
   border-radius: 14px; padding: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 .top { display: flex; align-items: center; gap: 10px; }
-.top h3 { margin: 0; font-size: 16px; color: #dbe6ff; }
+.top h3 { margin: 0; font-size: 16px; color: var(--text-accent); }
 .mark {
   display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: 9px; flex: 0 0 auto;
-  background: #1b2436; border: 1px solid #2a3550; color: #9fb3d6;
+  background: var(--btn); border: 1px solid var(--border); color: var(--text-2);
 }
-.mark.danger { background: #3a1b22; border-color: #5a2530; color: #ff9b9b; }
-.msg { margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: #9fb3d6; }
+.mark.danger { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-text); }
+.msg { margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: var(--text-2); }
 .acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 .acts button {
   padding: 9px 16px; border-radius: 9px; cursor: pointer; font-size: 14px;
-  background: #1b2436; border: 1px solid #2a3550; color: #cbd5e1;
+  background: var(--btn); border: 1px solid var(--border); color: var(--text);
 }
-.acts button:hover { background: #24314b; }
-.go { background: #2f6fed; border-color: #2f6fed; color: #fff; }
-.go:hover { background: #4180ff; }
-.go.danger { background: #b3313f; border-color: #c8404e; color: #fff; }
-.go.danger:hover { background: #cc3b4a; }
+.acts button:hover { background: var(--btn-hover); }
+.go { background: var(--accent); border-color: var(--accent); color: #fff; }
+.go:hover { background: var(--accent-hover); }
+.go.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.go.danger:hover { background: var(--danger); }
 @media (max-width: 640px) {
   .dialog { width: 100%; }
   .acts button { flex: 1; padding: 12px; }

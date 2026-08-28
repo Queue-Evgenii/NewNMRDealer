@@ -211,55 +211,55 @@ const money = (v: number) => v.toFixed(0)
   width: 280px;
   flex: 0 0 280px;
   overflow-y: auto;
-  background: #10182a;
-  border-left: 1px solid #223;
+  background: var(--panel);
+  border-left: 1px solid var(--border-soft);
   padding: 12px;
-  color: #cbd5e1;
+  color: var(--text);
 }
 section { margin-bottom: 18px; }
-h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #8fa3c4; }
+h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .stat { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
-.stat b { color: #e8eefc; }
-.stat.total { border-top: 1px solid #223; margin-top: 6px; padding-top: 8px; font-size: 15px; }
-.stat.total b { color: #4fd08a; }
+.stat b { color: var(--text-strong); }
+.stat.total { border-top: 1px solid var(--border-soft); margin-top: 6px; padding-top: 8px; font-size: 15px; }
+.stat.total b { color: var(--money); }
 .warn {
   margin: 0 0 8px; padding: 8px 10px; border-radius: 6px; font-size: 12px; line-height: 1.45;
-  background: #2a2214; border: 1px solid #4a3a1c; color: #ffce7a;
+  background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text);
 }
 .sides { list-style: none; margin: 0; padding: 0; }
 .sides li {
   display: flex; align-items: center; gap: 8px; padding: 3px 0;
 }
-.sides li.on .pick { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.sides li.on .pick { background: var(--accent); border-color: var(--accent); color: #fff; }
 .sides .pick {
   width: 52px; flex: 0 0 auto; margin: 0; padding: 8px 0; text-align: center;
   font-variant-numeric: tabular-nums; font-size: 13px;
 }
 .sides input { flex: 1 1 auto; min-width: 0; text-align: right; font-variant-numeric: tabular-nums; }
-.sides .unit { flex: 0 0 auto; font-size: 12px; color: #7f90b0; }
+.sides .unit { flex: 0 0 auto; font-size: 12px; color: var(--muted-2); }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 13px; }
 .row input { width: 110px; }
 input[type='number'] {
-  background: #0d1320; border: 1px solid #2a3550; color: #e8eefc;
+  background: var(--field); border: 1px solid var(--border); color: var(--text-strong);
   border-radius: 6px; padding: 6px 8px; font-size: 14px;
 }
 .color-field {
   display: flex; align-items: center; gap: 8px; width: 150px; margin: 0; padding: 6px 8px;
-  background: #0d1320; border: 1px solid #2a3550; border-radius: 6px; color: #e8eefc;
+  background: var(--field); border: 1px solid var(--border); border-radius: 6px; color: var(--text-strong);
   font-size: 14px; text-align: left; cursor: pointer;
 }
-.color-field:hover { background: #16203a; border-color: #3a4a72; }
+.color-field:hover { background: var(--accent-soft); border-color: var(--border-hover); }
 .color-sw { width: 18px; height: 18px; flex: 0 0 auto; border-radius: 5px; border: 1px solid rgba(255, 255, 255, 0.18); }
 .color-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 button {
   width: 100%; padding: 9px; margin-top: 6px; border-radius: 6px; cursor: pointer;
-  background: #1b2436; color: #cbd5e1; border: 1px solid #2a3550; font-size: 14px;
+  background: var(--btn); color: var(--text); border: 1px solid var(--border); font-size: 14px;
 }
-button:hover:not(:disabled) { background: #24314b; }
+button:hover:not(:disabled) { background: var(--btn-hover); }
 button:disabled { opacity: 0.35; cursor: default; }
-button.danger { background: #3a1b22; border-color: #5a2530; color: #ff9b9b; }
+button.danger { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-text); }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
-.seg button.on { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.seg button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .view .toggles, .view .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .view .acts { margin-top: 6px; }
 .view button {
@@ -267,5 +267,5 @@ button.danger { background: #3a1b22; border-color: #5a2530; color: #ff9b9b; }
   margin-top: 0; padding: 10px 8px; font-size: 13px;
 }
 .view button:disabled { opacity: 0.35; cursor: default; }
-.view button.on { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.view button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 </style>

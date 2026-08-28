@@ -49,5 +49,5 @@ const columns = [
 .view { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .view-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; }
 h1 { margin: 0; font-size: 18px; }
-select { background: #0d1320; border: 1px solid #2a3550; color: #e8eefc; border-radius: 7px; padding: 8px 11px; font-size: 14px; }
+select { background: var(--field); border: 1px solid var(--border); color: var(--text-strong); border-radius: 7px; padding: 8px 11px; font-size: 14px; }
 </style>

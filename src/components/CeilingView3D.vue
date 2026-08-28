@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { useConfigurator } from '../stores/configurator'
+import { themeMode } from '../theme'
 
 const store = useConfigurator()
 const { shapesView, settings, order } = storeToRefs(store)
@@ -38,6 +39,12 @@ const THICK = 40 // mm — толщина полотна на виде
  * полотна, и сцена выглядела как «пол в клеточку».
  */
 const ROOM_H = 2700
+
+/** Фон сцены = фон холста из темы: 3D не должно светиться чужим цветом. */
+function sceneColor(): string {
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim()
+  return v || '#0f1420'
+}
 
 function disposeGroup() {
   if (!group) return
@@ -192,7 +199,7 @@ function resize() {
 
 onMounted(() => {
   scene = new THREE.Scene()
-  scene.background = new THREE.Color(0x0f1420)
+  scene.background = new THREE.Color(sceneColor())
 
   camera = new THREE.PerspectiveCamera(45, 1, 1, 100000)
   renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -233,6 +240,7 @@ onMounted(() => {
 })
 
 watch([shapesView, settings, order], buildGeometry, { deep: true })
+watch(themeMode, () => { if (scene) scene.background = new THREE.Color(sceneColor()) })
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)

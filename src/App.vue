@@ -58,19 +58,19 @@ function logout() { auth.logout(); router.push({ name: 'login' }) }
 
 <style scoped>
 .shell { display: flex; height: 100vh; height: 100dvh; }
-.side { width: 230px; flex: 0 0 230px; background: #0b1120; border-right: 1px solid #1b2740; display: flex; flex-direction: column; }
-.brand { display: flex; align-items: center; gap: 9px; padding: 16px 18px; font-weight: 700; color: #e8eefc; border-bottom: 1px solid #1b2740; }
-.logo { color: #2f6fed; }
+.side { width: 230px; flex: 0 0 230px; background: var(--bg-deep); border-right: 1px solid var(--border-soft); display: flex; flex-direction: column; }
+.brand { display: flex; align-items: center; gap: 9px; padding: 16px 18px; font-weight: 700; color: var(--text-strong); border-bottom: 1px solid var(--border-soft); }
+.logo { color: var(--accent); }
 nav { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 3px; overflow-y: auto; }
-nav button { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 9px; border: none; background: transparent; color: #aeb9d0; cursor: pointer; font-size: 14px; text-align: left; }
+nav button { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 9px; border: none; background: transparent; color: var(--text-2); cursor: pointer; font-size: 14px; text-align: left; }
 nav button svg { flex: 0 0 auto; opacity: 0.9; }
-nav button:hover { background: #131d33; color: #e8eefc; }
-nav button.on { background: #2f6fed; color: #fff; }
-.user { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1px solid #1b2740; }
+nav button:hover { background: var(--row-hover); color: var(--text-strong); }
+nav button.on { background: var(--accent); color: #fff; }
+.user { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--border-soft); }
 .who { flex: 1; display: flex; flex-direction: column; line-height: 1.2; }
-.who small { color: #7f90b0; font-size: 12px; }
-.logout { background: #1b2436; border: 1px solid #2a3550; color: #cbd5e1; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; }
-.content { flex: 1; min-width: 0; overflow: hidden; background: #0f1420; }
+.who small { color: var(--muted-2); font-size: 12px; }
+.logout { background: var(--btn); border: 1px solid var(--border); color: var(--text); width: 34px; height: 34px; border-radius: 8px; cursor: pointer; }
+.content { flex: 1; min-width: 0; overflow: hidden; background: var(--bg); }
 
 @media (max-width: 720px) {
   .side { width: 64px; flex-basis: 64px; }

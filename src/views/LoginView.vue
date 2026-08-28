@@ -37,15 +37,15 @@ async function submit() {
 </template>
 
 <style scoped>
-.login { display: flex; align-items: center; justify-content: center; height: 100vh; height: 100dvh; background: radial-gradient(1200px 600px at 50% -10%, #16233f, #0b0f1a); }
-.card { width: 360px; max-width: 92vw; background: #121a2c; border: 1px solid #263250; border-radius: 16px; padding: 30px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 24px 70px rgba(0,0,0,.5); }
-.logo { font-size: 22px; font-weight: 700; color: #2f6fed; }
+.login { display: flex; align-items: center; justify-content: center; height: 100vh; height: 100dvh; background: radial-gradient(1200px 600px at 50% -10%, var(--accent-soft), var(--bg-deep)); }
+.card { width: 360px; max-width: 92vw; background: #121a2c; border: 1px solid var(--border-strong); border-radius: 16px; padding: 30px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 24px 70px rgba(0,0,0,.5); }
+.logo { font-size: 22px; font-weight: 700; color: var(--accent); }
 h1 { margin: 6px 0 0; font-size: 20px; }
-.sub { margin: 0 0 8px; color: #8fa3c4; font-size: 13px; }
-label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: #8fa3c4; }
-input { background: #0d1320; border: 1px solid #2a3550; color: #e8eefc; border-radius: 8px; padding: 10px 12px; font-size: 15px; }
-.err { color: #ff8b8b; font-size: 13px; margin: 0; }
-.primary { margin-top: 6px; padding: 11px; border-radius: 9px; background: #2f6fed; border: none; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
+.sub { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); }
+input { background: var(--field); border: 1px solid var(--border); color: var(--text-strong); border-radius: 8px; padding: 10px 12px; font-size: 15px; }
+.err { color: var(--danger-text); font-size: 13px; margin: 0; }
+.primary { margin-top: 6px; padding: 11px; border-radius: 9px; background: var(--accent); border: none; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
 .primary:disabled { opacity: .6; }
-.hint { text-align: center; font-size: 12px; color: #7f90b0; margin: 2px 0 0; }
+.hint { text-align: center; font-size: 12px; color: var(--muted-2); margin: 2px 0 0; }
 </style>

@@ -47,7 +47,7 @@ const preview = computed(() => {
       </header>
 
       <div class="current" :style="preview">
-        <span class="badge" :style="{ color: isLight(color) ? '#0f1420' : '#ffffff' }">
+        <span class="badge" :style="{ color: isLight(color) ? 'var(--bg)' : '#ffffff' }">
           {{ film }} · {{ color.toUpperCase() }}
         </span>
       </div>
@@ -58,7 +58,7 @@ const preview = computed(() => {
             :title="`${c.name} · ${c.hex}`" @click="setColor(c.hex)">
             <span class="sw" :class="{ on: c.hex === color }" :style="{ background: c.hex }">
               <IconCheck v-if="c.hex === color" :size="16" :stroke-width="2.5"
-                :color="isLight(c.hex) ? '#0f1420' : '#ffffff'" />
+                :color="isLight(c.hex) ? 'var(--bg)' : '#ffffff'" />
             </span>
             <span class="lbl">{{ c.name }}</span>
           </button>
@@ -90,7 +90,7 @@ const preview = computed(() => {
 .dialog {
   display: flex; flex-direction: column;
   width: 420px; max-width: 100%; max-height: 92vh;
-  background: #141c2e; border: 1px solid #263250; border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px;
   padding: 18px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 .head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -98,12 +98,12 @@ h2 { margin: 0; font-size: 18px; }
 .x {
   display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
   width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
-  background: #1b2436; border: 1px solid #2a3550; color: #cbd5e1;
+  background: var(--btn); border: 1px solid var(--border); color: var(--text);
 }
-.x:hover { background: #24314b; }
+.x:hover { background: var(--btn-hover); }
 .current {
   height: 60px; margin: 14px 0 0; border-radius: 10px;
-  border: 1px solid #2a3550; display: flex; align-items: flex-end; padding: 8px 12px;
+  border: 1px solid var(--border); display: flex; align-items: flex-end; padding: 8px 12px;
 }
 .badge { font-size: 13px; font-variant-numeric: tabular-nums; }
 .scroll {
@@ -115,7 +115,7 @@ h2 { margin: 0; font-size: 18px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 8px; }
 .cell {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 0; background: none; border: none; color: #9fb3d6; cursor: pointer; font: inherit;
+  padding: 0; background: none; border: none; color: var(--text-2); cursor: pointer; font: inherit;
 }
 .sw {
   display: flex; align-items: center; justify-content: center;
@@ -123,8 +123,8 @@ h2 { margin: 0; font-size: 18px; }
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: inset 0 -8px 14px rgba(0, 0, 0, 0.18);
 }
-.cell:hover .sw { border-color: #7fa9ff; }
-.sw.on { outline: 2px solid #2f6fed; outline-offset: 2px; }
+.cell:hover .sw { border-color: var(--accent-2); }
+.sw.on { outline: 2px solid var(--accent); outline-offset: 2px; }
 .lbl {
   max-width: 100%; font-size: 10px; line-height: 1.2; text-align: center;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -132,21 +132,21 @@ h2 { margin: 0; font-size: 18px; }
 .more {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 11px 12px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 14px;
-  background: #1b2436; border: 1px solid #2a3550; color: #cbd5e1;
+  background: var(--btn); border: 1px solid var(--border); color: var(--text);
 }
-.more:hover { background: #24314b; }
+.more:hover { background: var(--btn-hover); }
 .films { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .films button {
   display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px;
   border-radius: 8px; cursor: pointer; font: inherit; font-size: 14px;
-  background: #1b2436; border: 1px solid #2a3550; color: #cbd5e1;
+  background: var(--btn); border: 1px solid var(--border); color: var(--text);
 }
-.films button.on { background: #16233f; border-color: #2f6fed; color: #fff; }
+.films button.on { background: var(--accent-soft); border-color: var(--accent); color: #fff; }
 .film-dot { width: 12px; height: 12px; flex: 0 0 auto; border-radius: 4px; }
 .done {
   align-self: flex-end; padding: 10px 20px; border-radius: 8px; cursor: pointer;
   font: inherit; font-size: 14px; font-weight: 600;
-  background: #2f6fed; border: 1px solid #2f6fed; color: #fff;
+  background: var(--accent); border: 1px solid var(--accent); color: #fff;
 }
 @media (max-width: 760px) {
   .overlay { padding: 0; align-items: flex-end; }

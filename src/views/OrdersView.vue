@@ -48,5 +48,5 @@ function open(row: Order) {
 .view { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .view-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; }
 h1 { margin: 0; font-size: 18px; }
-.primary { padding: 9px 16px; border-radius: 8px; background: #2f6fed; border: none; color: #fff; cursor: pointer; font-weight: 600; }
+.primary { padding: 9px 16px; border-radius: 8px; background: var(--accent); border: none; color: #fff; cursor: pointer; font-weight: 600; }
 </style>

@@ -94,27 +94,27 @@ const title = computed(() =>
 
 <style scoped>
 .view { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.view-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid #1b2740; }
-.crumbs { font-size: 14px; color: #8fa3c4; }
+.view-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--border-soft); }
+.crumbs { font-size: 14px; color: var(--muted); }
 .crumbs a { color: #5aa0ff; cursor: pointer; }
-.crumbs b { color: #e8eefc; }
+.crumbs b { color: var(--text-strong); }
 .tabs { display: flex; gap: 4px; }
-.tabs button { padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; background: #1b2436; color: #cbd5e1; border: 1px solid #2a3550; }
-.tabs button.on { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.tabs button { padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; background: var(--btn); color: var(--text); border: 1px solid var(--border); }
+.tabs button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .params { padding: 18px; overflow: auto; }
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; max-width: 900px; }
-.grid label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: #8fa3c4; }
+.grid label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); }
 .grid .wide { grid-column: 1 / -1; }
 .grid input, .grid select, .grid textarea {
-  background: #0d1320; border: 1px solid #2a3550; color: #e8eefc; border-radius: 7px; padding: 8px 10px; font-size: 14px;
+  background: var(--field); border: 1px solid var(--border); color: var(--text-strong); border-radius: 7px; padding: 8px 10px; font-size: 14px;
 }
 .readout { display: flex; gap: 24px; margin: 20px 0; padding: 14px; background: #101a2e; border-radius: 10px; max-width: 900px; }
-.readout span { display: block; font-size: 11px; color: #8fa3c4; }
+.readout span { display: block; font-size: 11px; color: var(--muted); }
 .readout b { font-size: 15px; }
 .actions { display: flex; gap: 10px; max-width: 900px; }
-.actions button { padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; border: 1px solid #2a3550; }
-.ghost { background: transparent; color: #cbd5e1; }
-.primary { background: #2f6fed; border-color: #2f6fed; color: #fff; font-weight: 600; }
+.actions button { padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; border: 1px solid var(--border); }
+.ghost { background: transparent; color: var(--text); }
+.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 .draw { flex: 1; min-height: 0; }
 .empty { align-items: center; justify-content: center; color: #6b7ea0; }
 </style>

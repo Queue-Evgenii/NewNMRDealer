@@ -1,10 +1,117 @@
+/* ---------------------------------------------------------------------
+ * Цвета интерфейса — токенами: тёмный набор по умолчанию, светлый ниже.
+ * Компоненты цвета не знают, поэтому тема меняется в одном месте.
+ * Смысловые цвета чертежа (гарпун, шов, выделение) в токены не входят —
+ * они одинаковы в обеих темах.
+ * ------------------------------------------------------------------- */
 :root {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --bg: #0f1420;
+  --bg-deep: #0b1120;
+  --bar: #101828;
+  --panel: #10182a;
+  --surface: #141c2e;
+  --surface-2: #0f1728;
+  --field: #0d1320;
+  --btn: #1b2436;
+  --btn-hover: #24314b;
+  --row: #141d31;
+  --row-hover: #172136;
+  --row-sel: #16274a;
+
+  --border: #2a3550;
+  --border-strong: #263250;
+  --border-soft: #223;
+  --border-hover: #3a4a72;
+
+  --text-strong: #e8eefc;
+  --text: #cbd5e1;
+  --text-2: #9fb3d6;
+  --text-accent: #dbe6ff;
+  --muted: #8fa3c4;
+  --muted-2: #7f90b0;
+  --muted-3: #55637f;
+
+  --accent: #2f6fed;
+  --accent-hover: #3f7bf5;
+  --accent-2: #7fa9ff;
+  --accent-soft: #16233f;
+
+  --money: #4fd08a;
+  --danger: #c8404e;
+  --danger-bg: #3a1b22;
+  --danger-border: #5a2530;
+  --danger-text: #ff9b9b;
+  --warn-bg: #2a2214;
+  --warn-border: #4a3a1c;
+  --warn-text: #ffce7a;
+
+  /* холст */
+  --canvas-bg: var(--bg);
+  --grid: rgba(120, 150, 210, 0.07);
+  --grid-major: rgba(120, 150, 210, 0.16);
+  --handle-fill: #12203a;
+  --hole-fill: rgba(15, 20, 32, 0.85);
+  --shadow: rgba(0, 0, 0, 0.5);
+
   color-scheme: dark;
+}
+
+/* Светлая тема: те же роли, другие значения. */
+:root[data-theme='light'] {
+  --bg: #eef2f8;
+  --bg-deep: #e6ebf4;
+  --bar: #ffffff;
+  --panel: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f5f8fd;
+  --field: #ffffff;
+  --btn: #eef2f8;
+  --btn-hover: #e1e8f3;
+  --row: #f5f8fd;
+  --row-hover: #eaf0f9;
+  --row-sel: #dce8ff;
+
+  --border: #c9d4e5;
+  --border-strong: #d7dfec;
+  --border-soft: #e2e8f1;
+  --border-hover: #9db4d8;
+
+  --text-strong: #101a2c;
+  --text: #33415a;
+  --text-2: #46577a;
+  --text-accent: #1b4bb8;
+  --muted: #5c6b87;
+  --muted-2: #6b7891;
+  --muted-3: #8794aa;
+
+  --accent: #2f6fed;
+  --accent-hover: #2560d8;
+  --accent-2: #2f6fed;
+  --accent-soft: #dbe7ff;
+
+  --money: #1f8f57;
+  --danger: #c8404e;
+  --danger-bg: #fdecec;
+  --danger-border: #f0bfc3;
+  --danger-text: #b3313f;
+  --warn-bg: #fdf3e0;
+  --warn-border: #ecd6a8;
+  --warn-text: #8a5a12;
+
+  --canvas-bg: #f7f9fc;
+  --grid: rgba(60, 90, 150, 0.10);
+  --grid-major: rgba(60, 90, 150, 0.22);
+  --handle-fill: #ffffff;
+  --hole-fill: rgba(15, 20, 32, 0.10);
+  --shadow: rgba(15, 23, 42, 0.18);
+
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
 html, body, #app { margin: 0; height: 100%; }
-body { background: #0f1420; color: #e8eefc; overscroll-behavior: none; }
+body { background: var(--bg); color: var(--text-strong); overscroll-behavior: none; }
 button { font-family: inherit; }
 
 /* ---------------------------------------------------------------------
@@ -17,8 +124,8 @@ button { font-family: inherit; }
   gap: 2px;
   padding: 4px;
   border-radius: 12px;
-  background: #0d1320;
-  border: 1px solid #223;
+  background: var(--field);
+  border: 1px solid var(--border-soft);
 }
 .tile {
   display: flex;
@@ -32,7 +139,7 @@ button { font-family: inherit; }
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
-  color: #cbd5e1;
+  color: var(--text);
   font: inherit;
   cursor: pointer;
 }
@@ -42,14 +149,14 @@ button { font-family: inherit; }
   white-space: nowrap;
 }
 .tile svg { flex: 0 0 auto; }
-.tile:hover:not(:disabled):not(.on) { background: #1b2436; }
+.tile:hover:not(:disabled):not(.on) { background: var(--btn); }
 .tile:disabled { opacity: 0.32; cursor: default; }
 .tile:active:not(:disabled) { transform: translateY(1px); }
 /* выбранный режим — заливка */
-.tile.on { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.tile.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 /* включённый тумблер вида — приглушённая подсветка, чтобы ряд не «кричал» */
-.tile.toggle.on { background: rgba(47, 111, 237, 0.16); border-color: rgba(47, 111, 237, 0.5); color: #7fa9ff; }
-.tile.danger:hover:not(:disabled) { background: #3a1b22; border-color: #5a2530; color: #ff9b9b; }
+.tile.toggle.on { background: rgba(47, 111, 237, 0.16); border-color: rgba(47, 111, 237, 0.5); color: var(--accent-2); }
+.tile.danger:hover:not(:disabled) { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-text); }
 
 /* основная кнопка панели — той же высоты, что и плитки */
 .btn-primary {
@@ -58,28 +165,28 @@ button { font-family: inherit; }
   gap: 8px;
   height: 44px;
   padding: 0 16px;
-  border: 1px solid #2f6fed;
+  border: 1px solid var(--accent);
   border-radius: 10px;
-  background: #2f6fed;
+  background: var(--accent);
   color: #fff;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
-.btn-primary:hover { background: #3f7bf5; }
+.btn-primary:hover { background: var(--accent-hover); }
 .btn-ghost {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   height: 44px;
   padding: 0 14px;
-  border: 1px solid #2a3550;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: #1b2436;
-  color: #9fb3d6;
+  background: var(--btn);
+  color: var(--text-2);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
 }
-.btn-ghost:hover { background: #24314b; }
+.btn-ghost:hover { background: var(--btn-hover); }

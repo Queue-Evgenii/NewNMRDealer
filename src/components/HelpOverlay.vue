@@ -124,24 +124,24 @@ defineEmits<{ (e: 'close'): void }>()
 }
 .sheet {
   width: 560px; max-width: 100%; max-height: 90vh; overflow-y: auto;
-  background: #141c2e; border: 1px solid #263250; border-radius: 14px; padding: 24px;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px; padding: 24px;
 }
 h2 { margin: 0 0 8px; }
-.h { margin: 18px 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #8fa3c4; }
-.lead { color: #c3d0e8; font-size: 14px; margin: 0 0 14px; line-height: 1.5; }
-.note { font-size: 13px; color: #8fa3c4; line-height: 1.5; margin: 10px 0 0; }
-.steps { margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 14px; }
+.h { margin: 18px 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.lead { color: var(--text); font-size: 14px; margin: 0 0 14px; line-height: 1.5; }
+.note { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 10px 0 0; }
+.steps { margin: 0; padding-left: 20px; color: var(--text); font-size: 14px; }
 .steps li { margin-bottom: 8px; line-height: 1.45; }
-.terms { display: grid; gap: 9px; background: #0f1728; border: 1px solid #263250; border-radius: 10px; padding: 14px; font-size: 13px; color: #a9b8d4; line-height: 1.45; }
-.terms b { color: #dbe6ff; }
+.terms { display: grid; gap: 9px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; padding: 14px; font-size: 13px; color: var(--text-2); line-height: 1.45; }
+.terms b { color: var(--text-accent); }
 .terms b svg { vertical-align: -2px; }
-.kbd { display: grid; gap: 6px; font-size: 13px; color: #a9b8d4; }
+.kbd { display: grid; gap: 6px; font-size: 13px; color: var(--text-2); }
 kbd {
   display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 12px;
-  background: #0d1320; border: 1px solid #2a3550; color: #cbd5e1;
+  background: var(--field); border: 1px solid var(--border); color: var(--text);
 }
 .ok {
   margin-top: 20px; width: 100%; padding: 12px; border-radius: 9px; cursor: pointer;
-  background: #2f6fed; border: none; color: #fff; font-size: 15px; font-weight: 600;
+  background: var(--accent); border: none; color: #fff; font-size: 15px; font-weight: 600;
 }
 </style>

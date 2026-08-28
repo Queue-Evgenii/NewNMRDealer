@@ -101,19 +101,19 @@ function applyHex(v: string) {
 <style scoped>
 .picker { display: flex; flex-direction: column; gap: 10px; }
 .area, .hue { position: relative; touch-action: none; cursor: crosshair; border-radius: 10px; }
-.area:focus-visible, .hue:focus-visible { outline: 2px solid #2f6fed; outline-offset: 2px; }
+.area:focus-visible, .hue:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .area {
   height: 140px;
   background:
     linear-gradient(to top, #000, rgba(0, 0, 0, 0)),
     linear-gradient(to right, #fff, var(--hue));
-  border: 1px solid #2a3550;
+  border: 1px solid var(--border);
 }
 .hue {
   height: 26px;
   background: linear-gradient(to right,
     #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
-  border: 1px solid #2a3550;
+  border: 1px solid var(--border);
 }
 .knob {
   position: absolute; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px;
@@ -121,10 +121,10 @@ function applyHex(v: string) {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.45);
 }
 .row { display: flex; align-items: center; gap: 8px; }
-.preview { width: 40px; height: 38px; flex: 0 0 auto; border-radius: 8px; border: 1px solid #2a3550; }
+.preview { width: 40px; height: 38px; flex: 0 0 auto; border-radius: 8px; border: 1px solid var(--border); }
 .hex {
   flex: 1 1 auto; min-width: 0; text-transform: uppercase;
-  background: #0d1320; border: 1px solid #2a3550; color: #e8eefc;
+  background: var(--field); border: 1px solid var(--border); color: var(--text-strong);
   border-radius: 8px; padding: 9px 10px; font: inherit; font-size: 14px;
 }
 @media (max-width: 760px) {

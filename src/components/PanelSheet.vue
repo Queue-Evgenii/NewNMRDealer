@@ -38,7 +38,7 @@ const price = computed(() => totals.value.price.toFixed(0))
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
   display: flex; flex-direction: column;
   height: 82%;
-  background: #10182a; border-top: 1px solid #2a3550;
+  background: var(--panel); border-top: 1px solid var(--border);
   border-radius: 16px 16px 0 0;
   box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.45);
   transform: translateY(calc(100% - 62px));
@@ -48,13 +48,13 @@ const price = computed(() => totals.value.price.toFixed(0))
 .head {
   flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 6px; height: 62px; box-sizing: border-box;
-  padding: 0 12px; background: none; border: none; color: #cbd5e1; cursor: pointer;
+  padding: 0 12px; background: none; border: none; color: var(--text); cursor: pointer;
   position: relative;
 }
-.bar { width: 38px; height: 4px; border-radius: 2px; background: #2a3550; }
-.peek { display: flex; gap: 14px; font-size: 12px; color: #8fa3c4; }
-.peek b { color: #e8eefc; font-size: 13px; }
-.chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; color: #55637f; }
+.bar { width: 38px; height: 4px; border-radius: 2px; background: var(--border); }
+.peek { display: flex; gap: 14px; font-size: 12px; color: var(--muted); }
+.peek b { color: var(--text-strong); font-size: 13px; }
+.chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; color: var(--muted-3); }
 .body { flex: 1; min-height: 0; overflow-y: auto; }
 /* панель внутри шторки занимает всю ширину */
 .body :deep(.panel) {

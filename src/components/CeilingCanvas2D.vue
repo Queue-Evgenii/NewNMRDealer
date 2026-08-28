@@ -888,7 +888,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .canvas {
   width: 100%; height: 100%; display: block;
-  background: var(--canvas-bg, #0f1420);
+  background: var(--canvas-bg, var(--bg));
   touch-action: none; user-select: none;
 }
 /* попадание считаем сами — элементы курсор не перехватывают */
@@ -896,8 +896,8 @@ onBeforeUnmount(() => {
 .canvas.tool-select { cursor: default; }
 .canvas.tool-draw, .canvas.tool-ruler, .canvas.tool-measure { cursor: crosshair; }
 
-.grid { stroke: rgba(120, 150, 210, 0.07); }
-.grid.major { stroke: rgba(120, 150, 210, 0.16); }
+.grid { stroke: var(--grid); }
+.grid.major { stroke: var(--grid-major); }
 .inactive { opacity: 0.65; }
 .open-path { fill: none; stroke: #5aa0ff; }
 .shrink { fill: none; stroke: #ffb454; opacity: 0.8; }
@@ -907,18 +907,18 @@ onBeforeUnmount(() => {
 .edge.sel { stroke: #ffd54a; }
 .edge.base { stroke: #ffa726; }
 .tail { stroke: #7fd6ff; opacity: 0.7; }
-.measure { fill: #cbd5e1; dominant-baseline: middle; paint-order: stroke; stroke: #0f1420; stroke-width: 0.6px; }
-.angle { fill: #7fd6ff; text-anchor: middle; dominant-baseline: middle; paint-order: stroke; stroke: #0f1420; stroke-width: 0.6px; }
-.vertex { fill: #12203a; stroke: #5aa0ff; }
+.measure { fill: var(--text); dominant-baseline: middle; paint-order: stroke; stroke: var(--bg); stroke-width: 0.6px; }
+.angle { fill: #7fd6ff; text-anchor: middle; dominant-baseline: middle; paint-order: stroke; stroke: var(--bg); stroke-width: 0.6px; }
+.vertex { fill: var(--handle-fill); stroke: #5aa0ff; }
 .vertex.sel { fill: #ffd54a; stroke: #ffd54a; }
 .vertex.start { fill: #12331f; stroke: #4fd08a; }
-.vertex.inner { fill: #0f1420; stroke: #7fd6ff; }
+.vertex.inner { fill: var(--bg); stroke: #7fd6ff; }
 .weld { fill: none; stroke: #4fd08a; }
-.mid-handle { fill: rgba(20, 32, 56, 0.9); stroke: #4a5f8a; }
-.edge-hint { fill: #12203a; stroke: #7fd6ff; }
+.mid-handle { fill: var(--handle-fill); stroke: var(--muted-3); }
+.edge-hint { fill: var(--handle-fill); stroke: #7fd6ff; }
 .arc-handle { fill: rgba(255, 167, 38, 0.25); stroke: #ffa726; }
-.hole-fill { fill: rgba(15, 20, 32, 0.85); stroke: none; }
-.mid-plus { stroke: #9fb3d6; }
+.hole-fill { fill: var(--hole-fill); stroke: none; }
+.mid-plus { stroke: var(--text-2); }
 .guide { stroke: #ff5db1; opacity: 0.85; }
 .tri { fill: rgba(127, 214, 255, 0.05); stroke: rgba(127, 214, 255, 0.18); }
 .tri-diag { stroke: #7fd6ff; opacity: 0.65; }
@@ -927,10 +927,10 @@ onBeforeUnmount(() => {
 .tri-preview { fill: rgba(79, 208, 138, 0.18); stroke: #4fd08a; }
 .tri-preview.bad { fill: rgba(255, 107, 107, 0.12); stroke: #ff6b6b; }
 .tri-preview.poor { fill: rgba(255, 167, 38, 0.14); stroke: #ffa726; }
-.corner-name { fill: #ffd54a; text-anchor: middle; dominant-baseline: middle; paint-order: stroke; stroke: #0f1420; stroke-width: 0.8px; }
-.shape-label { fill: #55637f; text-anchor: start; dominant-baseline: middle; }
-.shape-label.on { fill: #9fc0ff; }
+.corner-name { fill: #ffd54a; text-anchor: middle; dominant-baseline: middle; paint-order: stroke; stroke: var(--bg); stroke-width: 0.8px; }
+.shape-label { fill: var(--muted-3); text-anchor: start; dominant-baseline: middle; }
+.shape-label.on { fill: var(--accent-2); }
 .ruler { stroke: #ff9f43; }
 .ruler-dot { fill: #ff9f43; stroke: #fff; }
-.ruler-label { fill: #ffd8a8; text-anchor: middle; paint-order: stroke; stroke: #0f1420; stroke-width: 0.8px; }
+.ruler-label { fill: var(--warn-text); text-anchor: middle; paint-order: stroke; stroke: var(--bg); stroke-width: 0.8px; }
 </style>

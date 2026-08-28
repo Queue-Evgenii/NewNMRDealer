@@ -16,6 +16,7 @@ import NewCeilingDialog from './NewCeilingDialog.vue'
 import HelpOverlay from './HelpOverlay.vue'
 import ProjectsPanel from './ProjectsPanel.vue'
 import ColorDialog from './ColorDialog.vue'
+import SettingsDialog from './SettingsDialog.vue'
 import { savedWhen } from '../composables/useWhen'
 import { IconSaved, IconProjects, IconPanelClose, IconPanelOpen, IconChevronDown, IconColors } from '../icons'
 import { useShortcuts } from '../composables/useShortcuts'
@@ -80,6 +81,7 @@ const showNew = ref(false)
 const showHelp = ref(false)
 // окно цвета: красим активное полотно
 const showColor = ref(false)
+const showSettings = ref(false)
 
 const drawPoints = computed(() => (tool.value === 'draw' ? activeShape.value.points.length : 0))
 
@@ -139,14 +141,14 @@ const hint = computed(() => {
     </div>
 
     <div v-if="phone && projectsSheet" class="proj-drop">
-      <ProjectsPanel compact @pick="projectsSheet = false" />
+      <ProjectsPanel compact @pick="projectsSheet = false" @settings="showSettings = true" />
     </div>
 
     <Toolbar v-if="!phone && tab === '2d'"
       @fit="canvasRef?.fit()" @new="showNew = true" @help="showHelp = true" />
 
     <div :class="['ws-body', { phone }]">
-      <ProjectsPanel v-if="!phone && projectsOpen" />
+      <ProjectsPanel v-if="!phone && projectsOpen" @settings="showSettings = true" />
 
       <div class="stage">
         <CeilingCanvas2D v-show="tab === '2d'" ref="canvasRef" />
@@ -201,6 +203,7 @@ const hint = computed(() => {
     </div>
 
     <ColorDialog v-if="showColor" :shape-id="activeShape.id" @close="showColor = false" />
+    <SettingsDialog v-if="showSettings" @close="showSettings = false" />
     <NewCeilingDialog v-if="showNew" @close="showNew = false" />
     <HelpOverlay v-if="showHelp" @close="showHelp = false" />
   </div>
@@ -208,39 +211,39 @@ const hint = computed(() => {
 
 <style scoped>
 .ws { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
-.ws-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #0b1120; border-bottom: 1px solid #223; }
+.ws-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-deep); border-bottom: 1px solid var(--border-soft); }
 .tabs { display: flex; gap: 4px; margin-left: auto; }
 .proj-toggle {
   display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
-  background: #1b2436; border: 1px solid #2a3550; color: #9fb3d6;
+  background: var(--btn); border: 1px solid var(--border); color: var(--text-2);
 }
-.proj-toggle:hover { background: #24314b; }
-.proj-name { font-size: 13px; color: #8fa3c4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proj-toggle:hover { background: var(--btn-hover); }
+.proj-name { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .proj-pick {
   display: flex; align-items: center; gap: 7px; max-width: 62%;
   height: 32px; padding: 0 10px; border-radius: 8px; cursor: pointer; font-size: 13px;
-  background: #1b2436; border: 1px solid #2a3550; color: #dbe6ff;
+  background: var(--btn); border: 1px solid var(--border); color: var(--text-accent);
 }
 .proj-pick { height: auto; min-height: 34px; padding: 4px 10px; }
 .pick-txt { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; line-height: 1.2; }
 .pick-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pick-when { font-size: 10px; color: #6d7f9e; }
+.pick-when { font-size: 10px; color: var(--muted-2); }
 .saved {
   display: flex; align-items: center; gap: 5px; flex: 0 0 auto;
-  font-size: 11px; color: #6d7f9e; white-space: nowrap;
+  font-size: 11px; color: var(--muted-2); white-space: nowrap;
 }
 .proj-drop {
   position: absolute; left: 8px; right: 8px; top: 52px; z-index: 20;
   max-height: 62%; display: flex;
-  background: #0d1320; border: 1px solid #2a3550; border-radius: 12px; overflow: hidden;
+  background: var(--field); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 .tabs button {
   padding: 7px 15px; border-radius: 8px; cursor: pointer; font-size: 14px;
-  background: #1b2436; color: #cbd5e1; border: 1px solid #2a3550;
+  background: var(--btn); color: var(--text); border: 1px solid var(--border);
 }
-.tabs button.on { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.tabs button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 .ws-body { flex: 1; display: flex; min-height: 0; }
 .stage { flex: 1; min-width: 0; position: relative; }
@@ -249,7 +252,7 @@ const hint = computed(() => {
 
 .hint {
   position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
-  background: rgba(20, 30, 50, 0.92); border: 1px solid #2f6fed; color: #dbe6ff;
+  background: rgba(20, 30, 50, 0.92); border: 1px solid var(--accent); color: var(--text-accent);
   padding: 6px 14px; border-radius: 20px; font-size: 13px; pointer-events: none;
   max-width: min(90%, 460px); text-align: center; z-index: 4;
 }
@@ -258,16 +261,16 @@ const hint = computed(() => {
 .draw-hud {
   position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
   display: flex; gap: 6px; padding: 6px; z-index: 6;
-  background: rgba(13, 19, 32, 0.96); border: 1px solid #2a3550; border-radius: 12px;
+  background: rgba(13, 19, 32, 0.96); border: 1px solid var(--border); border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 .draw-hud.phone { bottom: 148px; }
 .draw-hud button {
   display: flex; align-items: center; gap: 6px; height: 40px;
   padding: 0 14px; border-radius: 8px; cursor: pointer; font-size: 13px;
-  background: #1b2436; border: 1px solid #2a3550; color: #cbd5e1; white-space: nowrap;
+  background: var(--btn); border: 1px solid var(--border); color: var(--text); white-space: nowrap;
 }
-.draw-hud button.primary { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.draw-hud button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .draw-hud button:disabled { opacity: 0.35; cursor: default; }
 
 .mode-float { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%); z-index: 6; }
@@ -275,7 +278,7 @@ const hint = computed(() => {
   position: absolute; top: 10px; left: 10px; z-index: 5;
   display: flex; align-items: center; justify-content: center;
   width: 44px; height: 44px; border-radius: 12px; cursor: pointer;
-  background: rgba(13, 19, 32, 0.94); border: 1px solid #2a3550; color: #cbd5e1;
+  background: rgba(13, 19, 32, 0.94); border: 1px solid var(--border); color: var(--text);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 .color-fab::after {
@@ -287,14 +290,14 @@ const hint = computed(() => {
 .shared {
   position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
   display: flex; align-items: center; gap: 8px; z-index: 7;
-  padding: 8px 10px 8px 14px; border-radius: 12px; font-size: 13px; color: #dbe6ff;
-  background: rgba(13, 19, 32, 0.96); border: 1px solid #2f6fed;
+  padding: 8px 10px 8px 14px; border-radius: 12px; font-size: 13px; color: var(--text-accent);
+  background: rgba(13, 19, 32, 0.96); border: 1px solid var(--accent);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 .shared button {
   padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 13px;
-  background: #1b2436; border: 1px solid #2a3550; color: #cbd5e1; white-space: nowrap;
+  background: var(--btn); border: 1px solid var(--border); color: var(--text); white-space: nowrap;
 }
-.shared button.primary { background: #2f6fed; border-color: #2f6fed; color: #fff; }
+.shared button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .ws-body.phone .shared { top: 62px; font-size: 12px; }
 </style>
