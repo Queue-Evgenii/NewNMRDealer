@@ -54,7 +54,7 @@ function confirmDelete() {
       <button class="add" title="Новый проект" @click="addProject">
         <IconProjectNew :size="16" :stroke-width="1.75" />
       </button>
-      <button class="add" title="Настройки" @click="emit('settings')">
+      <button class="add" data-tour="settings" title="Настройки" @click="emit('settings')">
         <IconSettings :size="16" :stroke-width="1.75" />
       </button>
     </div>

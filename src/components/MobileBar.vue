@@ -18,7 +18,7 @@ defineEmits<{
 
 <template>
   <div class="left">
-    <button class="fab primary" title="Новый потолок" @click="$emit('new')">
+    <button class="fab primary" data-tour="new" title="Новый потолок" @click="$emit('new')">
       <IconPlus :size="22" :stroke-width="2" />
     </button>
     <button class="fab" title="Как это работает" @click="$emit('help')">

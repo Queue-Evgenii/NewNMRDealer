@@ -14,10 +14,12 @@ import CeilingCanvas2D from './CeilingCanvas2D.vue'
 import CeilingView3D from './CeilingView3D.vue'
 import NewCeilingDialog from './NewCeilingDialog.vue'
 import HelpOverlay from './HelpOverlay.vue'
+import TourOverlay from './TourOverlay.vue'
 import ProjectsPanel from './ProjectsPanel.vue'
 import ColorDialog from './ColorDialog.vue'
 import SettingsDialog from './SettingsDialog.vue'
 import { savedWhen } from '../composables/useWhen'
+import { markTourSeen, tourSeen } from '../composables/useTour'
 import { IconSaved, IconProjects, IconPanelClose, IconPanelOpen, IconChevronDown, IconColors } from '../icons'
 import { useShortcuts } from '../composables/useShortcuts'
 import { decodeModel } from '../composables/useShareLink'
@@ -42,6 +44,9 @@ const sharedNotice = ref(false)
 onMounted(async () => {
   // проекты держат список чертежей и задают ключ хранения текущего
   projects.init()
+
+  // при первом запуске сразу предлагаем короткое обучение
+  if (!tourSeen()) showHelp.value = true
 
   // чертёж мог прийти ссылкой: данные лежат в hash и на сервер не уходят
   const payload = new URLSearchParams(location.hash.split('?')[1] ?? '').get('d')
@@ -82,6 +87,17 @@ const showHelp = ref(false)
 // окно цвета: красим активное полотно
 const showColor = ref(false)
 const showSettings = ref(false)
+const showTour = ref(false)
+
+/** «Позже» тоже считается: второй раз при запуске окно не всплывёт. */
+function closeHelp() {
+  showHelp.value = false
+  markTourSeen()
+}
+function startTour() {
+  showHelp.value = false
+  showTour.value = true
+}
 
 const drawPoints = computed(() => (tool.value === 'draw' ? activeShape.value.points.length : 0))
 
@@ -117,7 +133,7 @@ const hint = computed(() => {
       </button>
 
       <!-- на телефоне колонки слева нет: имя проекта открывает список шторкой -->
-      <button v-else class="proj-pick" @click="projectsSheet = !projectsSheet">
+      <button v-else class="proj-pick" data-tour="projects" @click="projectsSheet = !projectsSheet">
         <IconProjects :size="16" :stroke-width="1.75" />
         <span class="pick-txt">
           <span class="pick-name">{{ currentProject?.name ?? 'Проект' }}</span>
@@ -134,7 +150,7 @@ const hint = computed(() => {
         {{ savedWhen(currentProject.updatedAt) }}
       </span>
 
-      <div class="tabs">
+      <div class="tabs" data-tour="tabs">
         <button :class="{ on: tab === '2d' }" @click="tab = '2d'">2D чертёж</button>
         <button :class="{ on: tab === '3d' }" @click="tab = '3d'">3D вид</button>
       </div>
@@ -148,9 +164,9 @@ const hint = computed(() => {
       @fit="canvasRef?.fit()" @new="showNew = true" @help="showHelp = true" />
 
     <div :class="['ws-body', { phone }]">
-      <ProjectsPanel v-if="!phone && projectsOpen" @settings="showSettings = true" />
+      <ProjectsPanel v-if="!phone && projectsOpen" data-tour="projects" @settings="showSettings = true" />
 
-      <div class="stage">
+      <div class="stage" data-tour="canvas">
         <CeilingCanvas2D v-show="tab === '2d'" ref="canvasRef" />
         <CeilingView3D v-if="tab === '3d'" />
 
@@ -191,21 +207,22 @@ const hint = computed(() => {
 
       <!-- панель справа (десктоп) или шторкой снизу (телефон) -->
       <template v-if="phone">
-        <PanelSheet v-if="tab === '2d'">
+        <PanelSheet v-if="tab === '2d'" data-tour="panel">
           <TrianglesPanel v-if="tool === 'measure'" />
           <SidePanel v-else show-view @color="showColor = true" />
         </PanelSheet>
       </template>
       <template v-else>
         <TrianglesPanel v-if="tool === 'measure'" />
-        <SidePanel v-else @color="showColor = true" />
+        <SidePanel v-else data-tour="panel" @color="showColor = true" />
       </template>
     </div>
 
     <ColorDialog v-if="showColor" :shape-id="activeShape.id" @close="showColor = false" />
     <SettingsDialog v-if="showSettings" @close="showSettings = false" />
     <NewCeilingDialog v-if="showNew" @close="showNew = false" />
-    <HelpOverlay v-if="showHelp" @close="showHelp = false" />
+    <HelpOverlay v-if="showHelp" @close="closeHelp" @tour="startTour" />
+    <TourOverlay v-if="showTour" @close="showTour = false" />
   </div>
 </template>
 

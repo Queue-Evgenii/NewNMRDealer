@@ -26,11 +26,11 @@ const delTitle = () => selectedPointId.value
 
 <template>
   <div class="toolbar">
-    <button class="btn-primary" @click="$emit('new')">
+    <button class="btn-primary" data-tour="new" @click="$emit('new')">
       <IconPlus :size="18" :stroke-width="2" />Новый потолок
     </button>
 
-    <ModeSwitch />
+    <ModeSwitch data-tour="modes" />
 
     <!-- действия -->
     <div class="tool-group">

@@ -1,147 +1,129 @@
 <script setup lang="ts">
-import { IconSelect, IconDraw, IconRuler, IconMeasure } from '../icons'
+/**
+ * Справка: что здесь есть, коротко. Текст разный под мышь и под палец —
+ * жесты и клавиши у них не совпадают, и общий вариант врал бы обоим.
+ * Где что лежит, показывает обучение по интерфейсу (TourOverlay).
+ */
+import { useMediaQuery } from '@vueuse/core'
+import {
+  IconSelect, IconDraw, IconRuler, IconMeasure, IconClose,
+  IconNewShape, IconDimensions, IconColors, IconLogo,
+} from '../icons'
 
-defineEmits<{ (e: 'close'): void }>()
+const emit = defineEmits<{ (e: 'close'): void; (e: 'tour'): void }>()
+
+/** Палец или мышь: у них разные жесты, а клавиши есть только у мыши. */
+const touch = useMediaQuery('(pointer: coarse)')
+
+const MODES = [
+  { icon: IconSelect, name: 'Выбор', key: 'V', what: 'править чертёж: углы, стороны, фигуры' },
+  { icon: IconDraw, name: 'Рисовать', key: 'D', what: 'новый контур по точкам' },
+  { icon: IconRuler, name: 'Линейка', key: 'R', what: 'расстояние между двумя точками' },
+  { icon: IconMeasure, name: 'Замер', key: 'T', what: 'построение по треугольникам' },
+]
+
+const CAN = [
+  { icon: IconNewShape, what: 'Форма: прямоугольник, Г-образный, круг, обход стен мастером' },
+  { icon: IconDimensions, what: 'Размеры: длины сторон, радиусы скруглений, ярусы и вырезы' },
+  { icon: IconColors, what: 'Цвет и плёнка полотна, 3D-вид для заказчика' },
+  { icon: IconLogo, what: 'Площадь, раскрой с усадкой и цена — считаются сами' },
+]
 </script>
 
 <template>
-  <div class="overlay" @click.self="$emit('close')">
-    <div class="sheet">
+  <div class="overlay" @click.self="emit('close')">
+    <div class="sheet" role="dialog" aria-label="Как это работает">
+      <button class="x" title="Закрыть" @click="emit('close')">
+        <IconClose :size="18" :stroke-width="1.75" />
+      </button>
+
       <h2>Как это работает</h2>
-      <p class="lead">
-        Конструктор натяжного потолка: вы задаёте форму комнаты сверху, программа считает
-        материал, раскрой и стоимость. Управление устроено как в графических редакторах —
-        сначала выбираете режим, потом работаете.
-      </p>
 
-      <h3 class="h">Четыре режима</h3>
-      <div class="terms">
-        <div><b><IconSelect :size="15" :stroke-width="1.75" /> Выбор</b> — единственный режим,
-          где меняется геометрия: выделять, тянуть углы, стороны и фигуры целиком.</div>
-        <div><b><IconDraw :size="15" :stroke-width="1.75" /> Рисовать</b> — новый контур по точкам.
-          Точки идут только в него, ничего постороннего клик не создаёт.</div>
-        <div><b><IconRuler :size="15" :stroke-width="1.75" /> Линейка</b> — два тапа, между ними расстояние.</div>
-        <div><b><IconMeasure :size="15" :stroke-width="1.75" /> Замер</b> — построение по методу треугольников.</div>
+      <h3>Режимы</h3>
+      <ul class="modes">
+        <li v-for="m in MODES" :key="m.name">
+          <component :is="m.icon" :size="16" :stroke-width="1.75" />
+          <b>{{ m.name }}</b>
+          <kbd v-if="!touch">{{ m.key }}</kbd>
+          <span>{{ m.what }}</span>
+        </li>
+      </ul>
+
+      <h3>Что умеет</h3>
+      <ul class="can">
+        <li v-for="c in CAN" :key="c.what">
+          <component :is="c.icon" :size="16" :stroke-width="1.75" />
+          <span>{{ c.what }}</span>
+        </li>
+      </ul>
+
+      <h3>{{ touch ? 'Жесты' : 'Управление' }}</h3>
+      <ul class="keys">
+        <template v-if="touch">
+          <li><b>Тап</b><span>выделить угол, сторону или фигуру</span></li>
+          <li><b>Тяга</b><span>двигать выделенное, по пустому — холст</span></li>
+          <li><b>Два пальца</b><span>масштаб и панорама</span></li>
+          <li><b>Ручка «+»</b><span>врезать угол посреди стороны</span></li>
+        </template>
+        <template v-else>
+          <li><kbd>колесо</kbd><span>масштаб, <kbd>пробел</kbd> — рука</span></li>
+          <li><kbd>Ctrl+Z</kbd><span>отмена, <kbd>Ctrl+Y</kbd> — повтор</span></li>
+          <li><kbd>G</kbd><span>сетка, <kbd>M</kbd> — размеры, <kbd>S</kbd> — привязка</span></li>
+          <li><kbd>C</kbd><span>замкнуть контур, <kbd>Del</kbd> — удалить</span></li>
+        </template>
+      </ul>
+
+      <div class="acts">
+        <button class="ghost" @click="emit('close')">Позже</button>
+        <button class="primary" @click="emit('tour')">Короткое обучение</button>
       </div>
-      <p class="note">
-        В режимах «Рисовать», «Линейка» и «Замер» перетаскивание всегда двигает холст —
-        случайно испортить чертёж нельзя.
-      </p>
-
-      <h3 class="h">Жесты — одинаковые везде</h3>
-      <div class="terms">
-        <div><b>Тяга по пустому месту</b> — двигать холст. <b>Два пальца</b> — двигать и
-          масштабировать. Колесо мыши — масштаб. Пробел — временная «рука».</div>
-        <div><b>Тап</b> — выделить: угол, сторону или фигуру. Тап по пустому — снять выделение.</div>
-        <div><b>Ручка «+» на середине стороны</b> — врезать новый угол. Тяните её сразу —
-          угол появится и поедет за пальцем.</div>
-        <div><b>Угол на угол</b> — если подвести вершину к соседней, они сварятся в одну
-          (зелёное кольцо — предупреждение).</div>
-      </div>
-
-      <h3 class="h">Замер по треугольникам</h3>
-      <p class="lead">
-        Углы на объекте не меряют — только длины. Комнату разбивают на треугольники:
-        по трём сторонам треугольник строится однозначно, поэтому контур собирается
-        из размеров сам.
-      </p>
-      <ol class="steps">
-        <li><b>Первый треугольник</b> — три длины: основание и две стороны от его концов.</li>
-        <li><b>Дальше по цепочке:</b> тап по стороне — она становится основанием, вводите
-          две длины до новой вершины.</li>
-        <li>Мерили <b>из одной точки посреди комнаты</b> — стройте веером от неё: последний
-          треугольник сам замкнёт контур, а точка замера останется внутри.</li>
-        <li>Уже нарисованную фигуру можно <b>разбить на треугольники</b> одной кнопкой
-          и выгрузить лист замера (CSV).</li>
-      </ol>
-      <p class="note">
-        Программа не даст построить несуществующий треугольник и не даст треугольникам
-        наложиться друг на друга. Если после замера двигать углы руками — панель честно
-        предупредит, что длины больше не те, что диктовал замерщик.
-      </p>
-
-      <div class="terms">
-        <div><b>Гарпун</b> — профиль по краю полотна, которым оно крепится к стене.</div>
-        <div><b>Усадка</b> — полотно кроят меньше комнаты на несколько %, оно натягивается при нагреве.</div>
-        <div><b>Шов / спайка</b> — если комната шире рулона, два полотна сваривают в одно.</div>
-      </div>
-
-      <h3 class="h">Многоярусные потолки, вырезы и скругления</h3>
-      <div class="terms">
-        <div><b>Любой контур, нарисованный внутри полотна, вырезает в нём отверстие</b> —
-          два полотна не могут занимать одно место. Форма любая. Площадь вычитается, обвод
-          остаётся в периметре (его тоже крепят), а разбивка на треугольники обходит вырез
-          и опирается на его углы.</div>
-        <div><b>Вырез</b> в панели «Фигура» означает, что у контура нет собственного полотна:
-          колонна, короб, вентиляционный проём. Если же внутри нарисован нижний ярус —
-          помечать ничего не нужно, он и так вырежет верхнее полотно.</div>
-        <div><b>Ярус</b> — номер и перепад вниз в миллиметрах. Каждый ярус считается отдельным
-          полотном со своим профилем; в панели видна разбивка по ярусам. Обычный приём:
-          в верхнем ярусе делают вырез, а нижний рисуют по тому же контуру с перепадом.</div>
-        <div><b>Скругление</b> — задаётся на выделенной стороне: <b>стрелка</b> (от середины
-          хорды до стены) или <b>радиус</b>. На дуге появляется оранжевая ручка — её можно
-          тянуть. В лист замера скругления идут отдельной таблицей: хорда, стрелка, радиус.</div>
-      </div>
-
-      <h3 class="h">Слои: разбираем потолок по одному ярусу</h3>
-      <p class="lead">
-        Когда ярусов несколько, а на каждом ещё вырезы и разбивка на треугольники, чертёж
-        читать тяжело. Панель «Слои» показывает потолок послойно: сначала основной ярус,
-        потом каждый следующий.
-      </p>
-      <div class="terms">
-        <div><b>Показано N из M</b> — кнопки − и ＋ добавляют и убирают ярусы сверху вниз.</div>
-        <div><b>Глаз</b> у яруса — спрятать или показать именно его. <b>Прицел</b> — оставить
-          на экране только этот ярус.</div>
-        <div><b>Добавить ярус</b> — заводит следующий уровень с перепадом и сразу включает
-          рисование его контура.</div>
-        <div>Скрытые ярусы не рисуются и не ловят нажатия — случайно зацепить их нельзя.
-          В смете они при этом остаются: расчёт всегда по всему потолку.</div>
-      </div>
-      <p class="note">
-        Подробности — разбивка на треугольники, углы и контур усадки — показываются только
-        для активной фигуры. Так на чертеже видно то, с чем вы работаете, а не всё сразу.
-      </p>
-
-      <h3 class="h">Клавиши</h3>
-      <div class="kbd">
-        <div><kbd>V</kbd> выбор · <kbd>D</kbd> рисовать · <kbd>R</kbd> линейка · <kbd>T</kbd> замер</div>
-        <div><kbd>Enter</kbd> замкнуть контур · <kbd>Backspace</kbd> убрать точку · <kbd>Esc</kbd> выйти / снять выделение</div>
-        <div><kbd>G</kbd> сетка · <kbd>M</kbd> размеры · <kbd>S</kbd> привязка · <kbd>C</kbd> контур · <kbd>Del</kbd> удалить</div>
-        <div><kbd>[</kbd> и <kbd>]</kbd> слои по одному · <kbd>\</kbd> показать все ярусы</div>
-        <div><kbd>Ctrl</kbd>+<kbd>Z</kbd> отмена · <kbd>Ctrl</kbd>+<kbd>Y</kbd> повтор · <kbd>Пробел</kbd> рука</div>
-      </div>
-
-      <button class="ok" @click="$emit('close')">Понятно</button>
     </div>
   </div>
 </template>
 
 <style scoped>
 .overlay {
-  position: fixed; inset: 0; background: rgba(6, 10, 18, 0.75);
-  display: flex; align-items: center; justify-content: center; z-index: 60; padding: 16px;
+  position: fixed; inset: 0; background: rgba(6, 10, 18, 0.7); z-index: 60;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
 }
 .sheet {
-  width: 560px; max-width: 100%; max-height: 90vh; overflow-y: auto;
-  background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px; padding: 24px;
+  position: relative; width: 460px; max-width: 100%; max-height: 92vh; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px;
+  padding: 22px; box-shadow: 0 20px 60px var(--shadow);
 }
-h2 { margin: 0 0 8px; }
-.h { margin: 18px 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
-.lead { color: var(--text); font-size: 14px; margin: 0 0 14px; line-height: 1.5; }
-.note { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 10px 0 0; }
-.steps { margin: 0; padding-left: 20px; color: var(--text); font-size: 14px; }
-.steps li { margin-bottom: 8px; line-height: 1.45; }
-.terms { display: grid; gap: 9px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; padding: 14px; font-size: 13px; color: var(--text-2); line-height: 1.45; }
-.terms b { color: var(--text-accent); }
-.terms b svg { vertical-align: -2px; }
-.kbd { display: grid; gap: 6px; font-size: 13px; color: var(--text-2); }
+.x {
+  position: absolute; top: 12px; right: 12px;
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+  background: none; border: none; color: var(--muted);
+}
+.x:hover { background: var(--btn-hover); color: var(--text); }
+h2 { margin: 0 0 14px; font-size: 19px; }
+h3 {
+  margin: 16px 0 8px; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--muted);
+}
+ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+li { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.4; color: var(--muted); }
+li svg { flex: 0 0 auto; color: var(--text-2); }
+li b { flex: 0 0 auto; color: var(--text-strong); font-weight: 600; }
+li span { min-width: 0; }
 kbd {
-  display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 12px;
-  background: var(--field); border: 1px solid var(--border); color: var(--text);
+  flex: 0 0 auto; padding: 2px 6px; border-radius: 5px; font: inherit; font-size: 11px;
+  background: var(--field); border: 1px solid var(--border); color: var(--text-2);
 }
-.ok {
-  margin-top: 20px; width: 100%; padding: 12px; border-radius: 9px; cursor: pointer;
-  background: var(--accent); border: none; color: #fff; font-size: 15px; font-weight: 600;
+.acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.acts button {
+  min-height: 44px; padding: 0 18px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 14px;
+  border: 1px solid var(--border);
+}
+.ghost { background: transparent; color: var(--text); }
+.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+@media (max-width: 760px) {
+  .overlay { padding: 0; align-items: flex-end; }
+  .sheet {
+    width: 100%; max-height: 88vh; border-radius: 16px 16px 0 0;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+  }
 }
 </style>
