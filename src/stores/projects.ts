@@ -1,4 +1,5 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
+import type { SerializedModel } from '../types'
 import { newId } from '../composables/useGeometry'
 import { setStorageKey, useConfigurator } from './configurator'
 
@@ -113,6 +114,29 @@ export const useProjects = defineStore('projects', {
       return meta.id
     },
 
+    /**
+     * Чертёж, пришедший по ссылке, — в новый проект. Раньше он ложился в
+     * открытый и затирал его, а свою работу приходилось «возвращать»
+     * отдельной кнопкой.
+     */
+    importShared(model: SerializedModel, name?: string) {
+      const cfg = useConfigurator()
+      cfg.persist() // свой чертёж дописываем в его проект
+
+      const meta = this._newMeta(name || this._sharedName())
+      this.list.push(meta)
+      this.currentId = meta.id
+      setStorageKey(projectKey(meta.id))
+      cfg.$reset()
+      cfg.applySerialized(model)
+      cfg.past = []
+      cfg.future = []
+      cfg.tool = 'select'
+      cfg.persist()
+      this._refresh(meta)
+      return meta.id
+    },
+
     /** Переключиться на другой проект. */
     open(id: string) {
       if (id === this.currentId) return
@@ -210,6 +234,13 @@ export const useProjects = defineStore('projects', {
     _newMeta(name: string): ProjectMeta {
       const now = Date.now()
       return { id: newId(), name, createdAt: now, updatedAt: this._stamp(), areaM2: 0, client: '' }
+    },
+    _sharedName(): string {
+      const taken = new Set(this.list.map((p) => p.name))
+      if (!taken.has('Из ссылки')) return 'Из ссылки'
+      let n = 2
+      while (taken.has(`Из ссылки ${n}`)) n += 1
+      return `Из ссылки ${n}`
     },
     _nextName(): string {
       let n = this.list.length + 1

@@ -12,6 +12,7 @@ import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import { CURRENCY } from '../pricing'
 import { arcSagitta } from '../composables/useArcs'
+import { buildShareLink } from '../composables/useShareLink'
 import { cornerLabel, sideLabel } from '../labels'
 import {
   IconGrid, IconDimensions, IconTriangles, IconSnap,
@@ -69,6 +70,34 @@ const lostHole = computed(() => activeShape.value.kind === 'hole' && !hostOfActi
 const cornerR = ref(300)
 function roundCorner() {
   if (selectedPointId.value) store.roundCorner(selectedPointId.value, cornerR.value)
+}
+
+// ссылка на чертёж: данные едут в самом адресе, сервер не нужен
+const shareState = ref('')
+async function shareLink() {
+  try {
+    const url = await buildShareLink(JSON.parse(store.serialize()))
+    await navigator.clipboard.writeText(url)
+    shareState.value = `Ссылка скопирована · ${url.length} символов`
+  } catch {
+    shareState.value = 'Не удалось скопировать — проверьте доступ к буферу обмена'
+  }
+  setTimeout(() => { shareState.value = '' }, 4000)
+}
+
+function exportJSON() {
+  const blob = new Blob([store.exportJSON()], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'ceiling.json'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+function importJSON(ev: Event) {
+  const file = (ev.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  file.text().then((t) => store.importJSON(t))
 }
 
 const money = (v: number) => v.toFixed(0)
@@ -203,6 +232,14 @@ const money = (v: number) => v.toFixed(0)
           <IconDelete :size="16" :stroke-width="1.75" />Удалить</button>
       </div>
     </section>
+    <section class="io">
+      <button @click="shareLink">Ссылка на чертёж</button>
+      <p v-if="shareState" class="hint-small">{{ shareState }}</p>
+      <button @click="exportJSON">Экспорт JSON</button>
+      <label class="import">Импорт JSON
+        <input type="file" accept="application/json" @change="importJSON" hidden />
+      </label>
+    </section>
   </aside>
 </template>
 
@@ -268,4 +305,10 @@ button.danger { background: var(--danger-bg); border-color: var(--danger-border)
 }
 .view button:disabled { opacity: 0.35; cursor: default; }
 .view button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.hint-small { margin: 6px 0 0; font-size: 11px; color: var(--muted-2); line-height: 1.45; }
+.io { display: flex; flex-direction: column; }
+.import {
+  display: block; text-align: center; padding: 9px; margin-top: 6px; border-radius: 6px;
+  background: var(--btn); border: 1px solid var(--border); cursor: pointer; font-size: 14px;
+}
 </style>

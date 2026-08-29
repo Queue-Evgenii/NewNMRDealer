@@ -98,3 +98,13 @@ describe('правка числами', () => {
     expect(w.text()).not.toContain('Угол ')
   })
 })
+
+describe('обмен чертежом', () => {
+  it('панель отдаёт ссылку, экспорт и импорт', () => {
+    const w = panel()
+    const io = w.find('.io')
+    expect(io.exists()).toBe(true)
+    expect(io.findAll('button').map((b) => b.text())).toEqual(['Ссылка на чертёж', 'Экспорт JSON'])
+    expect(io.find('input[type="file"]').exists()).toBe(true) // импорт — скрытый file
+  })
+})

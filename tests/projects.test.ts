@@ -155,3 +155,43 @@ describe('проекты', () => {
     expect(projects.ordered[1].id).toBe(b)
   })
 })
+
+describe('чертёж по ссылке', () => {
+  it('ложится в новый проект, а свой остаётся нетронутым', async () => {
+    const cfg = useConfigurator()
+    projects.init()
+
+    // свой чертёж: прямоугольник 4×3
+    cfg.insertRectangle(4000, 3000)
+    const mine = projects.currentId
+    const myArea = cfg.totals.areaM2
+
+    // пришла ссылка с другим чертежом
+    const shared = JSON.parse(cfg.serialize())
+    shared.shapes[0].points = [
+      { id: 'a', x: 0, y: 0 }, { id: 'b', x: 1000, y: 0 },
+      { id: 'c', x: 1000, y: 1000 }, { id: 'd', x: 0, y: 1000 },
+    ]
+    const id = projects.importShared(shared)
+
+    expect(id).not.toBe(mine)
+    expect(projects.currentId).toBe(id)
+    expect(projects.list.map((p) => p.id)).toContain(mine) // свой на месте
+    expect(cfg.totals.areaM2).toBeCloseTo(1, 3) // открыт присланный
+
+    // возвращаемся к своему — он не изменился
+    projects.open(mine)
+    expect(cfg.totals.areaM2).toBeCloseTo(myArea, 3)
+  })
+
+  it('второй присланный чертёж не перетирает первый', () => {
+    const cfg = useConfigurator()
+    projects.init()
+    const model = JSON.parse(cfg.serialize())
+
+    const first = projects.importShared(model)
+    const second = projects.importShared(model)
+    expect(second).not.toBe(first)
+    expect(projects.list.filter((p) => p.name.startsWith('Из ссылки'))).toHaveLength(2)
+  })
+})

@@ -56,7 +56,7 @@ onMounted(async () => {
     // адрес чистим в любом случае, чтобы правки не путались с исходной ссылкой
     history.replaceState(null, '', location.href.split('?')[0])
     if (model) {
-      store.applyShared(model)
+      projects.importShared(model)
       sharedNotice.value = true
       canvasRef.value?.fit()
       return
@@ -65,13 +65,7 @@ onMounted(async () => {
 })
 
 function keepShared() {
-  store.dropBackup()
   sharedNotice.value = false
-}
-function backToMine() {
-  store.restoreBackup()
-  sharedNotice.value = false
-  canvasRef.value?.fit()
 }
 
 const phone = useMediaQuery('(max-width: 900px)')
@@ -177,9 +171,8 @@ const hint = computed(() => {
 
         <!-- чертёж открыт по ссылке -->
         <div v-if="sharedNotice" class="shared">
-          <span>Открыт чертёж по ссылке.</span>
-          <button v-if="store.hasBackup()" @click="backToMine">Вернуть мой</button>
-          <button class="primary" @click="keepShared">Оставить</button>
+          <span>Чертёж из ссылки открыт отдельным проектом — ваши остались на месте.</span>
+          <button class="primary" @click="keepShared">Понятно</button>
         </div>
 
         <!-- рисование: явный выход, без угадывания -->
