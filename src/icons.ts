@@ -57,4 +57,5 @@ export {
   TriangleAlert as IconWarning,
   Clock3 as IconSaved,
   Settings as IconSettings,
+  Download as IconUpdate,
 } from 'lucide-vue-next'

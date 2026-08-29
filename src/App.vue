@@ -6,6 +6,7 @@ import {
   IconDashboard, IconOrders, IconDraw, IconClients, IconFilms,
   IconColors, IconWarehouse, IconUsers, IconLogo, IconLogout,
 } from './icons'
+import UpdateGate from './components/UpdateGate.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -54,6 +55,9 @@ function logout() { auth.logout(); router.push({ name: 'login' }) }
       <router-view />
     </main>
   </div>
+
+  <!-- обязательное обновление закрывает экран на любом маршруте -->
+  <UpdateGate />
 </template>
 
 <style scoped>

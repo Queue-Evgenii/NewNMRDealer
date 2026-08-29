@@ -4,8 +4,10 @@ import './style.css'
 import App from './App.vue'
 import { router } from './router'
 import { initTheme } from './theme'
+import { initUpdates } from './pwa'
 
 initTheme()
+initUpdates()
 
 const app = createApp(App).use(createPinia()).use(router)
 

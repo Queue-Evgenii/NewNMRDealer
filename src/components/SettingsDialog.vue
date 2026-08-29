@@ -5,6 +5,7 @@
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import { themeMode, setTheme, type ThemeMode } from '../theme'
+import { IS_DEV, version } from '../version'
 import { IconClose } from '../icons'
 
 const emit = defineEmits<{ (e: 'close'): void }>()
@@ -47,6 +48,13 @@ const THEMES: { id: ThemeMode; name: string }[] = [
             @change="store.updateSettings({ usad: Number(($event.target as HTMLInputElement).value) })" /></label>
       </section>
 
+      <section>
+        <h3>Версия</h3>
+        <div class="row"><span>Сборка</span><b>{{ version.current }}<template v-if="IS_DEV"> · dev</template></b></div>
+        <div v-if="version.available" class="row"><span>Доступна</span><b>{{ version.latest }}</b></div>
+        <p v-if="IS_DEV" class="note">Обновления по кнопке работают только в собранной копии.</p>
+      </section>
+
       <button class="done" @click="emit('close')">Готово</button>
     </div>
   </div>
@@ -80,6 +88,8 @@ section { margin-top: 14px; }
 }
 .themes button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+.row b { font-variant-numeric: tabular-nums; color: var(--text-strong); }
+.note { margin: 0; font-size: 11px; line-height: 1.45; color: var(--muted-2); }
 .row input {
   width: 120px; background: var(--field); border: 1px solid var(--border); color: var(--text-strong);
   border-radius: 8px; padding: 9px 10px; font: inherit; font-size: 14px;

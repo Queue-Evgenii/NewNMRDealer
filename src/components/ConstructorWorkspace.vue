@@ -18,6 +18,7 @@ import TourOverlay from './TourOverlay.vue'
 import ProjectsPanel from './ProjectsPanel.vue'
 import ColorDialog from './ColorDialog.vue'
 import SettingsDialog from './SettingsDialog.vue'
+import UpdateButton from './UpdateButton.vue'
 import { savedWhen } from '../composables/useWhen'
 import { markTourSeen, tourSeen } from '../composables/useTour'
 import { IconSaved, IconProjects, IconPanelClose, IconPanelOpen, IconChevronDown, IconColors } from '../icons'
@@ -154,6 +155,8 @@ const hint = computed(() => {
         <button :class="{ on: tab === '2d' }" @click="tab = '2d'">2D чертёж</button>
         <button :class="{ on: tab === '3d' }" @click="tab = '3d'">3D вид</button>
       </div>
+
+      <UpdateButton />
     </div>
 
     <div v-if="phone && projectsSheet" class="proj-drop">
