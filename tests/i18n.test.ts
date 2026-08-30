@@ -1,12 +1,14 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { useConfigurator } from '../src/stores/configurator'
 import LanguagePicker from '../src/components/LanguagePicker.vue'
 import { i18n, LOCALES, LOCALE_NAMES, setLocale, currentLocale } from '../src/i18n'
 import ru from '../src/i18n/locales/ru'
 import pl from '../src/i18n/locales/pl'
 import en from '../src/i18n/locales/en'
 import { BASIC_COLORS } from '../src/ceilingColors'
-import { FILMS, LEGACY_FILMS, filmLabel } from '../src/filmColors'
+import { DEFAULT_FILM, FILMS, LEGACY_FILMS, filmLabel } from '../src/filmColors'
 import { FILM_PER_M2 } from '../src/pricing'
 
 /** Все ключи словаря плоским списком: `panel.area`, `color.names.white`… */
@@ -93,5 +95,47 @@ describe('доменные значения не переводятся', () => 
   it('старые названия плёнки переносятся на идентификаторы', () => {
     expect(Object.values(LEGACY_FILMS).sort()).toEqual([...FILMS].sort())
     expect(LEGACY_FILMS['Глянец']).toBe('gloss')
+  })
+
+  /**
+   * Главный риск перевода: чертёж, сохранённый до v3, держит плёнку русским
+   * названием — а по нему берётся ставка. Не перенеси мы его, цена молча
+   * съехала бы на дефолтный глянец.
+   */
+  it('чертёж v2 открывается с той же плёнкой и той же ценой', () => {
+    setActivePinia(createPinia())
+    const store = useConfigurator()
+    localStorage.clear()
+    store.reset('empty')
+
+    store.setTool('draw')
+    for (const p of [{ x: 0, y: 0 }, { x: 4000, y: 0 }, { x: 4000, y: 3000 }, { x: 0, y: 3000 }]) {
+      store.drawPoint(p.x, p.y, false)
+    }
+    store.finishDraw(true)
+    store.setShapeFilm(store.activeShapeId, 'mat')
+    const priceNow = store.totals.price
+
+    // как это лежало в localStorage у пользователя старой сборки
+    const v2 = JSON.parse(store.serialize())
+    v2.version = 2
+    for (const s of v2.shapes) s.film = 'Мат'
+
+    setActivePinia(createPinia())
+    const opened = useConfigurator()
+    opened.applySerialized(v2)
+
+    expect(opened.shapes[0].film).toBe('mat')
+    expect(opened.totals.price).toBeCloseTo(priceNow, 3)
+  })
+
+  it('плёнку, которой нет ни в новых, ни в старых, заменяет плёнка по умолчанию', () => {
+    setActivePinia(createPinia())
+    const store = useConfigurator()
+    store.reset('rect')
+    const model = JSON.parse(store.serialize())
+    for (const s of model.shapes) s.film = 'Бархат'
+    store.applySerialized(model)
+    expect(store.shapes[0].film).toBe(DEFAULT_FILM)
   })
 })
