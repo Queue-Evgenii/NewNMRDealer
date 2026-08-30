@@ -2,60 +2,69 @@
 /**
  * Базовые настройки приложения. Всё применяется сразу — окно только закрывают.
  */
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useConfigurator } from '../stores/configurator'
 import { themeMode, setTheme, type ThemeMode } from '../theme'
 import { IS_DEV, version } from '../version'
 import { IconClose } from '../icons'
+import LanguagePicker from './LanguagePicker.vue'
 
+const { t } = useI18n()
 const emit = defineEmits<{ (e: 'close'): void }>()
 
 const store = useConfigurator()
 const { settings } = storeToRefs(store)
 
-const THEMES: { id: ThemeMode; name: string }[] = [
-  { id: 'system', name: 'Как в системе' },
-  { id: 'dark', name: 'Тёмная' },
-  { id: 'light', name: 'Светлая' },
-]
+const THEMES = computed<{ id: ThemeMode; name: string }[]>(() => [
+  { id: 'system', name: t('settings.themeSystem') },
+  { id: 'dark', name: t('settings.themeDark') },
+  { id: 'light', name: t('settings.themeLight') },
+])
 </script>
 
 <template>
   <div class="overlay" @click.self="emit('close')">
-    <div class="dialog" role="dialog" aria-label="Настройки">
+    <div class="dialog" role="dialog" :aria-label="t('settings.title')">
       <header class="head">
-        <h2>Настройки</h2>
-        <button class="x" title="Закрыть" @click="emit('close')">
+        <h2>{{ t('settings.title') }}</h2>
+        <button class="x" :title="t('common.close')" @click="emit('close')">
           <IconClose :size="18" :stroke-width="1.75" />
         </button>
       </header>
 
       <section>
-        <h3>Тема</h3>
+        <h3>{{ t('lang.title') }}</h3>
+        <LanguagePicker />
+      </section>
+
+      <section>
+        <h3>{{ t('settings.theme') }}</h3>
         <div class="themes">
-          <button v-for="t in THEMES" :key="t.id" :class="{ on: themeMode === t.id }"
-            @click="setTheme(t.id)">{{ t.name }}</button>
+          <button v-for="th in THEMES" :key="th.id" :class="{ on: themeMode === th.id }"
+            @click="setTheme(th.id)">{{ th.name }}</button>
         </div>
       </section>
 
       <section>
-        <h3>Чертёж</h3>
-        <label class="row"><span>Шаг сетки, мм</span>
+        <h3>{{ t('settings.drawing') }}</h3>
+        <label class="row"><span>{{ t('settings.gridStep') }}</span>
           <input type="number" inputmode="decimal" min="10" step="10" :value="settings.gridStep"
             @change="store.updateSettings({ gridStep: Number(($event.target as HTMLInputElement).value) })" /></label>
-        <label class="row"><span>Усадка полотна, %</span>
+        <label class="row"><span>{{ t('settings.usad') }}</span>
           <input type="number" inputmode="decimal" min="0" step="0.5" :value="settings.usad"
             @change="store.updateSettings({ usad: Number(($event.target as HTMLInputElement).value) })" /></label>
       </section>
 
       <section>
-        <h3>Версия</h3>
-        <div class="row"><span>Сборка</span><b>{{ version.current }}<template v-if="IS_DEV"> · dev</template></b></div>
-        <div v-if="version.available" class="row"><span>Доступна</span><b>{{ version.latest }}</b></div>
-        <p v-if="IS_DEV" class="note">Обновления по кнопке работают только в собранной копии.</p>
+        <h3>{{ t('settings.version') }}</h3>
+        <div class="row"><span>{{ t('settings.build') }}</span><b>{{ version.current }}<template v-if="IS_DEV"> · dev</template></b></div>
+        <div v-if="version.available" class="row"><span>{{ t('settings.available') }}</span><b>{{ version.latest }}</b></div>
+        <p v-if="IS_DEV" class="note">{{ t('settings.devNote') }}</p>
       </section>
 
-      <button class="done" @click="emit('close')">Готово</button>
+      <button class="done" @click="emit('close')">{{ t('common.done') }}</button>
     </div>
   </div>
 </template>

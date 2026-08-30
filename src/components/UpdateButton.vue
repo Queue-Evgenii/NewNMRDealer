@@ -6,18 +6,20 @@
  * сборке, сколько бы раз его ни перезагружали.
  */
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { applyUpdate, version } from '../version'
 import { IconUpdate } from '../icons'
 
+const { t } = useI18n()
 const show = computed(() => version.available || version.ready)
 </script>
 
 <template>
-  <button v-if="show" class="update" :title="`Обновить до версии ${version.latest}`"
+  <button v-if="show" class="update" :title="t('update.toVersion', { v: version.latest })"
     @click="applyUpdate">
     <span class="dot"></span>
     <IconUpdate :size="15" :stroke-width="2" />
-    <span class="txt">Обновление {{ version.latest }}</span>
+    <span class="txt">{{ t('update.label', { v: version.latest }) }}</span>
   </button>
 </template>
 

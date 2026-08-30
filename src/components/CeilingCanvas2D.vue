@@ -14,11 +14,13 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
+import { useI18n } from 'vue-i18n'
 import { rgba } from '../ceilingColors'
 import { arcMidpoint, bulgeFromPoint, sampleArc } from '../composables/useArcs'
 import { cornerLabel } from '../labels'
 import type { Edge, Point } from '../types'
 
+const { t } = useI18n()
 const store = useConfigurator()
 const {
   shapesView, allPoints, edges, activeEdges, settings, selectedPointId, selectedEdgeKey,
@@ -393,9 +395,9 @@ function shapeLabel(sh: { id: string; points: Point[]; level: number }) {
     minX = Math.min(minX, p.x); minY = Math.min(minY, p.y)
   }
   const i = shapesView.value.findIndex((s) => s.id === sh.id)
-  const tier = sh.level > 1 ? ` · ярус ${sh.level}` : ''
+  const tier = sh.level > 1 ? ` · ${t('canvas.tier', { n: sh.level })}` : ''
   // в левый верхний угол габарита: середина верхней стены занята размером
-  return { x: minX, y: minY - px(18), text: `Фигура ${i + 1}${tier}` }
+  return { x: minX, y: minY - px(18), text: t('canvas.shapeLabel', { n: i + 1 }) + tier }
 }
 
 /** Центры фигур — нужны, чтобы отодвинуть подпись размера наружу. */
@@ -888,7 +890,7 @@ onBeforeUnmount(() => {
         class="ruler-dot" :stroke-width="thinW" />
       <text v-if="rulerPts.length === 2" :x="(rulerPts[0].x + rulerPts[1].x) / 2"
         :y="(rulerPts[0].y + rulerPts[1].y) / 2 - px(14)" class="ruler-label"
-        :font-size="fontMm">{{ rulerDist }} мм</text>
+        :font-size="fontMm">{{ rulerDist }} {{ t('common.mm') }}</text>
     </g>
   </svg>
 </template>

@@ -5,6 +5,8 @@
  * Шаг привязан к атрибуту `data-tour` на элементе. Чего нет на экране (панель
  * инструментов на телефоне, шестерёнка в закрытом списке) — тот шаг пропускаем.
  */
+import { t } from '../i18n'
+
 export interface TourStep {
   /** Значение data-tour у подсвечиваемого элемента. */
   target: string
@@ -12,20 +14,23 @@ export interface TourStep {
   text: string
 }
 
-export const TOUR_STEPS: TourStep[] = [
-  { target: 'new', title: 'Новый потолок', text: 'Прямоугольник, Г-образный, круг или обход стен мастером.' },
-  { target: 'modes', title: 'Режимы', text: 'Выбор правит чертёж, Рисовать ставит углы, Линейка и Замер меряют.' },
-  { target: 'canvas', title: 'Чертёж', text: 'Тяните углы и стороны, тап — выделить. Два пальца или колесо — масштаб.' },
-  { target: 'panel', title: 'Размеры и цена', text: 'Длина каждой стороны — полем. Площадь и цена считаются сразу.' },
-  { target: 'tabs', title: '3D вид', text: 'Тот же потолок объёмом — с цветом и блеском плёнки.' },
-  { target: 'projects', title: 'Проекты', text: 'Список чертежей. Правки сохраняются сами.' },
-  { target: 'settings', title: 'Настройки', text: 'Тема приложения, шаг сетки и усадка полотна.' },
-]
+/** Шаги обучения. Собираются при показе: подписи зависят от текущего языка. */
+export function tourSteps(): TourStep[] {
+  return [
+    { target: 'new', title: t('tour.newTitle'), text: t('tour.newText') },
+    { target: 'modes', title: t('tour.modesTitle'), text: t('tour.modesText') },
+    { target: 'canvas', title: t('tour.canvasTitle'), text: t('tour.canvasText') },
+    { target: 'panel', title: t('tour.panelTitle'), text: t('tour.panelText') },
+    { target: 'tabs', title: t('tour.tabsTitle'), text: t('tour.tabsText') },
+    { target: 'projects', title: t('tour.projectsTitle'), text: t('tour.projectsText') },
+    { target: 'settings', title: t('tour.settingsTitle'), text: t('tour.settingsText') },
+  ]
+}
 
 export const selectorOf = (step: TourStep) => `[data-tour="${step.target}"]`
 
 /** Шаги, для которых элемент сейчас есть на экране. */
-export function visibleSteps(steps: TourStep[] = TOUR_STEPS): TourStep[] {
+export function visibleSteps(steps: TourStep[] = tourSteps()): TourStep[] {
   return steps.filter((s) => !!document.querySelector(selectorOf(s)))
 }
 

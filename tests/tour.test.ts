@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import { TOUR_STEPS, visibleSteps, tourSeen, markTourSeen, placeCard } from '../src/composables/useTour'
+import { tourSteps, visibleSteps, tourSeen, markTourSeen, placeCard } from '../src/composables/useTour'
 import TourOverlay from '../src/components/TourOverlay.vue'
 import HelpOverlay from '../src/components/HelpOverlay.vue'
 
@@ -28,7 +28,7 @@ afterEach(() => { document.body.innerHTML = '' })
 
 describe('шаги обучения', () => {
   it('каждый шаг — одна короткая фраза', () => {
-    for (const s of TOUR_STEPS) {
+    for (const s of tourSteps()) {
       expect(s.title.length).toBeLessThan(20)
       expect(s.text.length).toBeLessThan(80)
     }

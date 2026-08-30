@@ -4,15 +4,17 @@
  * на глазах, кнопка внизу только закрывает. На телефоне — нижняя шторка.
  */
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConfigurator } from '../stores/configurator'
-import { BASIC_COLORS, isLight } from '../ceilingColors'
-import { FILMS, filmColor } from '../filmColors'
+import { BASIC_COLORS, colorLabel, isLight } from '../ceilingColors'
+import { FILMS, filmColor, filmLabel } from '../filmColors'
 import ColorPicker from './ColorPicker.vue'
 import { IconCheck, IconClose, IconChevronDown, IconChevronUp } from '../icons'
 
 const props = defineProps<{ shapeId: string }>()
 const emit = defineEmits<{ (e: 'close'): void }>()
 
+const { t } = useI18n()
 const store = useConfigurator()
 const shape = computed(() => store.shapes.find((s) => s.id === props.shapeId))
 const color = computed(() => shape.value?.colorHex ?? BASIC_COLORS[0].hex)
@@ -27,57 +29,57 @@ const setFilm = (name: string) => store.setShapeFilm(props.shapeId, name)
 /** Образец «как на потолке»: цвет плюс блеск выбранной плёнки. */
 const preview = computed(() => {
   const c = color.value
-  if (film.value === 'Мат') return { background: c }
-  if (film.value === 'Фактура') {
+  if (film.value === 'mat') return { background: c }
+  if (film.value === 'texture') {
     return { background: `repeating-linear-gradient(135deg, ${c} 0 6px, rgba(255,255,255,0.07) 6px 12px), ${c}` }
   }
-  const gloss = film.value === 'Сатин' ? '0.16' : '0.42'
+  const gloss = film.value === 'satin' ? '0.16' : '0.42'
   return { background: `linear-gradient(118deg, rgba(255,255,255,${gloss}) 0%, rgba(255,255,255,0) 42%), ${c}` }
 })
 </script>
 
 <template>
   <div class="overlay" @click.self="emit('close')">
-    <div class="dialog" role="dialog" aria-label="Цвет полотна">
+    <div class="dialog" role="dialog" :aria-label="t('color.title')">
       <header class="head">
-        <h2>Цвет полотна</h2>
-        <button class="x" title="Закрыть" @click="emit('close')">
+        <h2>{{ t('color.title') }}</h2>
+        <button class="x" :title="t('common.close')" @click="emit('close')">
           <IconClose :size="18" :stroke-width="1.75" />
         </button>
       </header>
 
       <div class="current" :style="preview">
         <span class="badge" :style="{ color: isLight(color) ? 'var(--bg)' : '#ffffff' }">
-          {{ film }} · {{ color.toUpperCase() }}
+          {{ filmLabel(film) }} · {{ color.toUpperCase() }}
         </span>
       </div>
 
       <div class="scroll">
         <div class="grid">
           <button v-for="c in BASIC_COLORS" :key="c.hex" class="cell"
-            :title="`${c.name} · ${c.hex}`" @click="setColor(c.hex)">
+            :title="`${colorLabel(c.id)} · ${c.hex}`" @click="setColor(c.hex)">
             <span class="sw" :class="{ on: c.hex === color }" :style="{ background: c.hex }">
               <IconCheck v-if="c.hex === color" :size="16" :stroke-width="2.5"
                 :color="isLight(c.hex) ? 'var(--bg)' : '#ffffff'" />
             </span>
-            <span class="lbl">{{ c.name }}</span>
+            <span class="lbl">{{ colorLabel(c.id) }}</span>
           </button>
         </div>
 
         <button class="more" @click="custom = !custom">
-          Свой оттенок
+          {{ t('color.ownShade') }}
           <component :is="custom ? IconChevronUp : IconChevronDown" :size="16" :stroke-width="1.75" />
         </button>
         <ColorPicker v-if="custom" :model-value="color" @update:model-value="setColor" />
 
         <div class="films">
           <button v-for="f in FILMS" :key="f" :class="{ on: f === film }" @click="setFilm(f)">
-            <span class="film-dot" :style="{ background: filmColor(f) }"></span>{{ f }}
+            <span class="film-dot" :style="{ background: filmColor(f) }"></span>{{ filmLabel(f) }}
           </button>
         </div>
       </div>
 
-      <button class="done" @click="emit('close')">Готово</button>
+      <button class="done" @click="emit('close')">{{ t('common.done') }}</button>
     </div>
   </div>
 </template>

@@ -33,8 +33,8 @@ const shapeOf = (id: string) => store.shapes.find((s) => s.id === id)!
 describe('палитра', () => {
   it('каждый образец — корректный код цвета', () => {
     for (const c of BASIC_COLORS) {
-      expect(normalizeHex(c.hex), `${c.name}: ${c.hex}`).toBe(c.hex)
-      expect(c.name.trim().length).toBeGreaterThan(0)
+      expect(normalizeHex(c.hex), `${c.id}: ${c.hex}`).toBe(c.hex)
+      expect(c.id.trim().length).toBeGreaterThan(0)
     }
   })
 
@@ -61,9 +61,9 @@ describe('цвет и плёнка полотна', () => {
   it('у каждого яруса свой цвет', () => {
     const lower = secondLevel()
     store.setShapeColor(lower, '#c8322f')
-    store.setShapeFilm(lower, 'Мат')
+    store.setShapeFilm(lower, 'mat')
     expect(shapeOf(lower).colorHex).toBe('#c8322f')
-    expect(shapeOf(lower).film).toBe('Мат')
+    expect(shapeOf(lower).film).toBe('mat')
     expect(store.shapes[0].colorHex).toBe(DEFAULT_COLOR.hex)
     expect(store.shapes[0].film).toBe(DEFAULT_FILM)
   })
@@ -89,12 +89,12 @@ describe('цвет и плёнка полотна', () => {
   it('едет в ссылке на чертёж', async () => {
     const lower = secondLevel()
     store.setShapeColor(lower, '#c8322f')
-    store.setShapeFilm(lower, 'Мат')
+    store.setShapeFilm(lower, 'mat')
 
     const restored = await decodeModel(await encodeModel(JSON.parse(store.serialize())))
     const back = restored!.shapes.find((s) => s.level === 2)!
     expect(back.colorHex).toBe('#c8322f')
-    expect(back.film).toBe('Мат')
+    expect(back.film).toBe('mat')
     expect(restored!.shapes.find((s) => s.level === 1)!.film).toBe(DEFAULT_FILM)
   })
 
@@ -144,7 +144,7 @@ describe('окно выбора', () => {
     await w.findAll('.cell')[16].trigger('click')
     await w.findAll('.films button')[1].trigger('click')
     expect(shapeOf(lower).colorHex).toBe(BASIC_COLORS[16].hex)
-    expect(shapeOf(lower).film).toBe('Мат')
+    expect(shapeOf(lower).film).toBe('mat')
     expect(store.shapes[0].colorHex).toBe(DEFAULT_COLOR.hex)
   })
 })

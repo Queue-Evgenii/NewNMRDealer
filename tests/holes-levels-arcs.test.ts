@@ -310,9 +310,9 @@ describe('разбивка с вырезом', () => {
     roomWithColumn()
     store.triangulateActive()
     const rows = store.measureRows
-    const holeRows = rows.filter((r) => r.side.includes('В'))
+    const holeRows = rows.filter((r) => r.side.includes('H'))
     expect(holeRows.length).toBeGreaterThan(0)
-    expect(holeRows.some((r) => r.kind === 'Контур')).toBe(true)
+    expect(holeRows.some((r) => r.kind === 'contour')).toBe(true)
   })
 
   it('пристройка треугольников к полотну с вырезом отклоняется понятно', () => {

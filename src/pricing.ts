@@ -6,12 +6,12 @@ import { DEFAULT_FILM } from './filmColors'
 
 export const CURRENCY = 'PLN'
 
-/** Полотно за м² — по типу плёнки. */
+/** Полотно за м² — по типу плёнки (ключ — идентификатор, а не подпись). */
 export const FILM_PER_M2: Record<string, number> = {
-  'Глянец': 45,
-  'Мат': 38,
-  'Сатин': 52,
-  'Фактура': 68,
+  gloss: 45,
+  mat: 38,
+  satin: 52,
+  texture: 68,
 }
 
 export const GARPUN_PER_M = 6  // гарпун, пог. м

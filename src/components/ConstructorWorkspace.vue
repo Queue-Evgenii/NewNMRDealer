@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useMediaQuery } from '@vueuse/core'
 import { useConfigurator } from '../stores/configurator'
@@ -27,6 +28,7 @@ import { decodeModel } from '../composables/useShareLink'
 import { IconStepBack, IconCheck, IconClose } from '../icons'
 
 useShortcuts()
+const { t } = useI18n()
 const store = useConfigurator()
 const { tool, activeShape, measureBaseKey } = storeToRefs(store)
 
@@ -102,16 +104,16 @@ const hint = computed(() => {
   switch (tool.value) {
     case 'draw':
       return drawPoints.value === 0
-        ? 'Ставьте углы комнаты по одному. Тяните — холст двигается.'
+        ? t('workspace.hint.drawStart')
         : drawPoints.value < 3
-          ? 'Ещё точки… Замкнуть можно с трёх углов.'
-          : 'Тап по зелёной точке или «Замкнуть» — контур готов.'
+          ? t('workspace.hint.drawMore')
+          : t('workspace.hint.drawClose')
     case 'ruler':
-      return 'Два тапа — расстояние между ними.'
+      return t('workspace.hint.ruler')
     case 'measure':
       return activeShape.value.triangles.length
-        ? (measureBaseKey.value ? 'Основание выбрано — введите две длины справа.' : 'Тап по стороне — это основание следующего треугольника.')
-        : 'Задайте три стороны первого треугольника или разбейте фигуру — справа.'
+        ? (measureBaseKey.value ? t('workspace.hint.measureBase') : t('workspace.hint.measurePick'))
+        : t('workspace.hint.measureFirst')
     default:
       return ''
   }
@@ -122,7 +124,7 @@ const hint = computed(() => {
   <div class="ws">
     <div class="ws-head">
       <button v-if="!phone" class="proj-toggle"
-        :title="projectsOpen ? 'Скрыть проекты' : 'Показать проекты'"
+        :title="projectsOpen ? t('workspace.hideProjects') : t('workspace.showProjects')"
         @click="projectsOpen = !projectsOpen">
         <component :is="projectsOpen ? IconPanelClose : IconPanelOpen" :size="17" :stroke-width="1.75" />
       </button>
@@ -131,7 +133,7 @@ const hint = computed(() => {
       <button v-else class="proj-pick" data-tour="projects" @click="projectsSheet = !projectsSheet">
         <IconProjects :size="16" :stroke-width="1.75" />
         <span class="pick-txt">
-          <span class="pick-name">{{ currentProject?.name ?? 'Проект' }}</span>
+          <span class="pick-name">{{ currentProject?.name ?? t('workspace.project') }}</span>
           <span v-if="currentProject" class="pick-when">{{ savedWhen(currentProject.updatedAt) }}</span>
         </span>
         <IconChevronDown :size="14" :stroke-width="2" />
@@ -146,8 +148,8 @@ const hint = computed(() => {
       </span>
 
       <div class="tabs" data-tour="tabs">
-        <button :class="{ on: tab === '2d' }" @click="tab = '2d'">2D чертёж</button>
-        <button :class="{ on: tab === '3d' }" @click="tab = '3d'">3D вид</button>
+        <button :class="{ on: tab === '2d' }" @click="tab = '2d'">{{ t('workspace.tab2d') }}</button>
+        <button :class="{ on: tab === '3d' }" @click="tab = '3d'">{{ t('workspace.tab3d') }}</button>
       </div>
 
       <UpdateButton />
@@ -171,26 +173,26 @@ const hint = computed(() => {
 
         <!-- чертёж открыт по ссылке -->
         <div v-if="sharedNotice" class="shared">
-          <span>Чертёж из ссылки открыт отдельным проектом — ваши остались на месте.</span>
-          <button class="primary" @click="keepShared">Понятно</button>
+          <span>{{ t('workspace.sharedOpened') }}</span>
+          <button class="primary" @click="keepShared">{{ t('workspace.gotIt') }}</button>
         </div>
 
         <!-- рисование: явный выход, без угадывания -->
         <div v-if="tool === 'draw' && tab === '2d'" :class="['draw-hud', { phone }]">
           <button :disabled="!drawPoints" @click="store.undoDrawPoint()">
-            <IconStepBack :size="16" :stroke-width="1.75" />Точку назад
+            <IconStepBack :size="16" :stroke-width="1.75" />{{ t('workspace.pointBack') }}
           </button>
           <button class="primary" :disabled="drawPoints < 3" @click="store.finishDraw(true)">
-            <IconCheck :size="16" :stroke-width="2" />Замкнуть
+            <IconCheck :size="16" :stroke-width="2" />{{ t('workspace.closeContour') }}
           </button>
           <button @click="store.finishDraw(false)">
-            <IconClose :size="16" :stroke-width="1.75" />Готово
+            <IconClose :size="16" :stroke-width="1.75" />{{ t('workspace.finishDraw') }}
           </button>
         </div>
 
         <!-- в 3D на телефоне панели нет: цвет должен остаться под рукой -->
         <button v-if="phone && tab === '3d'" class="color-fab" :style="{ '--chip': activeShape.colorHex }"
-          title="Цвет полотна" @click="showColor = true">
+          :title="t('workspace.ceilingColor')" @click="showColor = true">
           <IconColors :size="20" :stroke-width="1.75" />
         </button>
 

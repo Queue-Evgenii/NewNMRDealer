@@ -9,6 +9,9 @@
  * где просят ввести все стены подряд.
  */
 
+import { t } from '../i18n'
+import { cornerLabel } from '../labels'
+
 /** Поворот на конце стены, градусы: +90 — направо, −90 — налево, 0 — прямо. */
 export interface WallSpec {
   /** Имя угла, из которого выходит стена. Пусто — подставим букву. */
@@ -24,12 +27,8 @@ export interface WizardPoint {
   name: string
 }
 
-/** Буквенные имена углов по умолчанию: А, Б, В… потом А1, Б1… */
-const LETTERS = 'АБВГДЕЖЗИКЛМНПРСТУФХЦЧШЭЮЯ'
-export function cornerName(i: number): string {
-  const round = Math.floor(i / LETTERS.length)
-  return LETTERS[i % LETTERS.length] + (round ? String(round) : '')
-}
+/** Буквенные имена углов по умолчанию — те же, что на чертеже: A, B, C… */
+export const cornerName = (i: number): string => cornerLabel(i)
 
 /**
  * Обход стен → углы контура. Идём из (0,0) вправо; каждая стена ведёт в
@@ -92,11 +91,11 @@ function distToSeg(p: WizardPoint, a: WizardPoint, b: WizardPoint): number {
  */
 export function contourProblem(pts: WizardPoint[]): string | null {
   const n = pts.length
-  if (n < 3) return 'Углов должно быть хотя бы три'
+  if (n < 3) return t('wizard.errFew')
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       if (Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y) < 1) {
-        return `Углы ${pts[i].name} и ${pts[j].name} попали в одну точку — обход замкнулся раньше времени`
+        return t('wizard.errSamePoint', { a: pts[i].name, b: pts[j].name })
       }
     }
   }
@@ -106,11 +105,11 @@ export function contourProblem(pts: WizardPoint[]): string | null {
     for (let k = 0; k < n; k++) {
       if (k === i || k === (i + 1) % n) continue
       if (distToSeg(pts[k], a, b) < 1) {
-        return `Угол ${pts[k].name} лежит на стене ${a.name}–${b.name} — стены налегают друг на друга`
+        return t('wizard.errOnWall', { c: pts[k].name, a: a.name, b: b.name })
       }
     }
   }
-  if (selfIntersects(pts)) return 'Стены пересекаются — поправьте повороты'
+  if (selfIntersects(pts)) return t('wizard.errCross')
   return null
 }
 

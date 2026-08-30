@@ -1,18 +1,23 @@
 <script setup lang="ts">
 // Подтверждение опасного действия. Свой диалог вместо confirm(): системное
 // окно нельзя оформить, а на телефоне в вебвью его вид непредсказуем.
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { IconWarning } from '../icons'
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   message?: string
   confirmText?: string
   cancelText?: string
   danger?: boolean
-}>(), { confirmText: 'Удалить', cancelText: 'Отмена', danger: true })
+}>(), { confirmText: '', cancelText: '', danger: true })
 
 const emit = defineEmits<{ (e: 'confirm'): void; (e: 'cancel'): void }>()
+
+const { t } = useI18n()
+const okLabel = computed(() => props.confirmText || t('common.delete'))
+const cancelLabel = computed(() => props.cancelText || t('common.cancel'))
 
 const okBtn = ref<HTMLButtonElement | null>(null)
 
@@ -34,8 +39,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
       </div>
       <p v-if="message" class="msg">{{ message }}</p>
       <div class="acts">
-        <button class="ghost" @click="emit('cancel')">{{ cancelText }}</button>
-        <button ref="okBtn" :class="['go', { danger }]" @click="emit('confirm')">{{ confirmText }}</button>
+        <button class="ghost" @click="emit('cancel')">{{ cancelLabel }}</button>
+        <button ref="okBtn" :class="['go', { danger }]" @click="emit('confirm')">{{ okLabel }}</button>
       </div>
     </div>
   </div>

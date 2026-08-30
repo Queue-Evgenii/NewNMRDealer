@@ -4,19 +4,22 @@
  * цены на ней могут разойтись с теми, что видят остальные. Выход один —
  * обновиться, поэтому кнопка в окне тоже одна.
  */
+import { useI18n } from 'vue-i18n'
 import { applyUpdate, version } from '../version'
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div v-if="version.blocked" class="block">
     <div class="card">
-      <h2>Нужно обновиться</h2>
+      <h2>{{ t('update.needTitle') }}</h2>
       <p>
-        Версия {{ version.current }} больше не поддерживается.
-        Обновитесь до {{ version.latest }}, чтобы продолжить работу.
+        {{ t('update.unsupported', { current: version.current }) }}
+        {{ t('update.upgradeTo', { latest: version.latest }) }}
       </p>
       <div class="acts">
-        <button class="primary" @click="applyUpdate">Обновить</button>
+        <button class="primary" @click="applyUpdate">{{ t('update.action') }}</button>
       </div>
     </div>
   </div>

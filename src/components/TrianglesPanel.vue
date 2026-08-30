@@ -1,9 +1,11 @@
 <script setup lang="ts">
 // Панель «метод треугольников»: замерщик диктует длины — контур строится сам.
 import { computed, ref, watch, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 
+const { t } = useI18n()
 const store = useConfigurator()
 const { activeShape, activeEdges, measureBaseKey, measureRows, triangleAreaM2, activeAreaM2,
   activeChordAreaM2, arcRows, triPreview, triangleQuality, meshStale, activeHoleCount } = storeToRefs(store)
@@ -54,7 +56,7 @@ const previewHint = computed(() =>
 const weak = computed(() => triangleQuality.value.filter((q) => q.level !== 'good'))
 
 function addNext() {
-  if (!base.value) { errN.value = 'Выберите сторону-основание на чертеже'; return }
+  if (!base.value) { errN.value = t('triangles.needBase'); return }
   errN.value = store.attachTriangle(base.value.key, Number(lenA.value), Number(lenB.value)) ?? ''
   if (!errN.value) { lenA.value = null; lenB.value = null }
 }
@@ -63,13 +65,13 @@ function addNext() {
 const triList = computed(() => {
   const byNo = new Map<number, { no: number; sides: string[]; area: number }>()
   for (const r of measureRows.value) {
-    const t = byNo.get(r.no) ?? { no: r.no, sides: [], area: r.area }
-    t.sides.push(`${r.len}${r.kind === 'Диагональ' ? '*' : ''}`)
-    byNo.set(r.no, t)
+    const row = byNo.get(r.no) ?? { no: r.no, sides: [], area: r.area }
+    row.sides.push(`${r.len}${r.kind === 'diagonal' ? '*' : ''}`)
+    byNo.set(r.no, row)
   }
-  return [...byNo.values()].map((t) => ({
-    ...t,
-    q: triangleQuality.value.find((q) => q.no === t.no) ?? null,
+  return [...byNo.values()].map((row) => ({
+    ...row,
+    q: triangleQuality.value.find((q) => q.no === row.no) ?? null,
   }))
 })
 
@@ -80,10 +82,11 @@ const areaMatches = computed(() => Math.abs(triangleAreaM2.value - activeChordAr
 const arcExtra = computed(() => activeAreaM2.value - activeChordAreaM2.value)
 
 function csv(): string {
-  const lines = ['№ треугольника;Сторона;Длина, мм;Тип']
-  lines.push(...measureRows.value.map((r) => `${r.no};${r.side};${r.len};${r.kind}`))
+  const lines = [t('triangles.csvHead')]
+  const kind = (k: string) => (k === 'diagonal' ? t('triangles.diagonal') : t('triangles.contour'))
+  lines.push(...measureRows.value.map((r) => `${r.no};${r.side};${r.len};${kind(r.kind)}`))
   if (arcRows.value.length) {
-    lines.push('', 'Скругления;Сторона;Хорда, мм;Стрелка, мм;Радиус, мм;Длина дуги, мм')
+    lines.push('', t('triangles.csvArcHead'))
     lines.push(...arcRows.value.map((r) => `;${r.side};${r.chord};${r.sagitta};${r.radius};${r.length}`))
   }
   return lines.join('\r\n')
@@ -105,53 +108,50 @@ function copyCsv() {
 <template>
   <aside class="panel">
     <section class="intro">
-      <h3>Метод треугольников</h3>
+      <h3>{{ t('triangles.title') }}</h3>
       <p>
-        Углы на объекте не меряют — только длины. Комната разбивается на треугольники:
-        стороны + диагонали. По трём сторонам треугольник строится однозначно, поэтому
-        контур собирается сам. Треугольники не пересекаются — это проверяется при каждой
-        пристройке.
+        {{ t('triangles.intro') }}
       </p>
     </section>
 
     <!-- первый треугольник -->
     <section v-if="!hasTriangles">
-      <h3>Первый треугольник</h3>
-      <label class="row"><span>Основание (1–2)</span>
-        <input type="number" inputmode="decimal" min="1" placeholder="мм" v-model.number="base0" /></label>
-      <label class="row"><span>Сторона от т.1</span>
-        <input type="number" inputmode="decimal" min="1" placeholder="мм" v-model.number="sideA0" /></label>
-      <label class="row"><span>Сторона от т.2</span>
-        <input type="number" inputmode="decimal" min="1" placeholder="мм" v-model.number="sideB0" /></label>
-      <button class="primary" @click="buildFirst">Построить треугольник</button>
-      <div class="or">или</div>
-      <button @click="splitCurrent">Разбить текущую фигуру на треугольники</button>
+      <h3>{{ t('triangles.first') }}</h3>
+      <label class="row"><span>{{ t('triangles.base12') }}</span>
+        <input type="number" inputmode="decimal" min="1" :placeholder="t('common.mm')" v-model.number="base0" /></label>
+      <label class="row"><span>{{ t('triangles.sideFrom1') }}</span>
+        <input type="number" inputmode="decimal" min="1" :placeholder="t('common.mm')" v-model.number="sideA0" /></label>
+      <label class="row"><span>{{ t('triangles.sideFrom2') }}</span>
+        <input type="number" inputmode="decimal" min="1" :placeholder="t('common.mm')" v-model.number="sideB0" /></label>
+      <button class="primary" @click="buildFirst">{{ t('triangles.buildFirst') }}</button>
+      <div class="or">{{ t('common.or') }}</div>
+      <button @click="splitCurrent">{{ t('triangles.splitCurrent') }}</button>
       <p v-if="err0" class="err">{{ err0 }}</p>
     </section>
 
     <!-- следующий треугольник -->
     <section v-else>
-      <h3>Следующий треугольник</h3>
+      <h3>{{ t('triangles.next') }}</h3>
       <div class="base">
         <template v-if="base">
-          <span>Основание</span>
-          <b>сторона {{ base.i1 }}–{{ base.i2 }}</b>
-          <span class="muted">{{ Math.round(base.length) }} мм</span>
+          <span>{{ t('triangles.base') }}</span>
+          <b>{{ t('triangles.baseSide', { a: base.i1, b: base.i2 }) }}</b>
+          <span class="muted">{{ Math.round(base.length) }} {{ t('common.mm') }}</span>
         </template>
-        <span v-else class="muted">Тап по стороне на чертеже — или выберите ниже</span>
+        <span v-else class="muted">{{ t('triangles.pickBase') }}</span>
       </div>
       <select class="pick" :value="measureBaseKey ?? ''"
         @change="store.setMeasureBase(($event.target as HTMLSelectElement).value || null)">
-        <option value="">— сторона-основание —</option>
+        <option value="">{{ t('triangles.basePlaceholder') }}</option>
         <option v-for="e in activeEdges" :key="e.key" :value="e.key">
-          {{ e.i1 }}–{{ e.i2 }} · {{ Math.round(e.length) }} мм
+          {{ e.i1 }}–{{ e.i2 }} · {{ Math.round(e.length) }} {{ t('common.mm') }}
         </option>
       </select>
-      <label class="row"><span>От точки {{ base?.i1 ?? '1' }}</span>
-        <input type="number" inputmode="decimal" min="1" placeholder="мм" v-model.number="lenA" /></label>
-      <label class="row"><span>От точки {{ base?.i2 ?? '2' }}</span>
-        <input type="number" inputmode="decimal" min="1" placeholder="мм" v-model.number="lenB" /></label>
-      <button class="primary" :disabled="!base" @click="addNext">Пристроить треугольник</button>
+      <label class="row"><span>{{ t('triangles.fromPoint', { n: base?.i1 ?? '1' }) }}</span>
+        <input type="number" inputmode="decimal" min="1" :placeholder="t('common.mm')" v-model.number="lenA" /></label>
+      <label class="row"><span>{{ t('triangles.fromPoint', { n: base?.i2 ?? '2' }) }}</span>
+        <input type="number" inputmode="decimal" min="1" :placeholder="t('common.mm')" v-model.number="lenB" /></label>
+      <button class="primary" :disabled="!base" @click="addNext">{{ t('triangles.addNext') }}</button>
       <p v-if="errN" class="err">{{ errN }}</p>
       <p v-else-if="previewMsg" class="err">{{ previewMsg }}</p>
       <p v-else-if="previewWarn" class="warn">{{ previewWarn }}</p>
@@ -161,81 +161,81 @@ function copyCsv() {
     <!-- разбивка не знает про вырез -->
     <section v-if="meshStale" class="warn-box">
       <p>
-        Разбивка построена до того, как контур изменился: вырезы и вложенные фигуры в неё
-        не вошли, треугольники идут сквозь них. Сумма треугольников не сойдётся с площадью.
+        {{ t('triangles.stale') }}
       </p>
-      <button class="primary" @click="resplit">Разбить заново</button>
+      <button class="primary" @click="resplit">{{ t('triangles.resplit') }}</button>
       <p v-if="err0" class="err">{{ err0 }}</p>
     </section>
 
     <!-- размеры правили руками -->
     <section v-if="dirty" class="warn-box">
-      <p>Геометрию двигали вручную — длины ниже больше не те, что диктовал замерщик.</p>
-      <button @click="store.triangulateActive()">Пересчитать разбивку по чертежу</button>
+      <p>{{ t('triangles.dirty') }}</p>
+      <button @click="store.triangulateActive()">{{ t('triangles.recalc') }}</button>
     </section>
 
     <!-- список треугольников -->
     <section v-if="hasTriangles">
-      <h3>Треугольники ({{ triCount }})</h3>
+      <h3>{{ t('triangles.list', { n: triCount }) }}</h3>
       <ul class="tris">
-        <li v-for="t in triList" :key="t.no" :class="t.q?.level">
-          <span class="no">△{{ t.no }}</span>
-          <span class="sides">{{ t.sides.join(' · ') }}</span>
-          <span v-if="t.q" class="angle" :title="'Ошибка рулетки множится ×' + t.q.factor.toFixed(1)">
-            {{ t.q.minAngle }}°
+        <li v-for="row in triList" :key="row.no" :class="row.q?.level">
+          <span class="no">△{{ row.no }}</span>
+          <span class="sides">{{ row.sides.join(' · ') }}</span>
+          <span v-if="row.q" class="angle" :title="t('triangles.errorFactor', { n: row.q.factor.toFixed(1) })">
+            {{ row.q.minAngle }}°
           </span>
-          <span class="muted">{{ (t.area / 1_000_000).toFixed(2) }} м²</span>
+          <span class="muted">{{ (row.area / 1_000_000).toFixed(2) }} {{ t('common.m2') }}</span>
         </li>
       </ul>
-      <p class="legend">* — диагональ · градусы — самый острый угол треугольника</p>
-      <div class="stat"><span>Вырезов в фигуре</span>
+      <p class="legend">{{ t('triangles.legend') }}</p>
+      <div class="stat"><span>{{ t('triangles.holes') }}</span>
         <b :class="{ warn: activeHoleCount === 0 }">{{ activeHoleCount }}</b></div>
-      <p v-if="activeHoleCount" class="legend">Их углы входят в разбивку — треугольники обходят вырез.</p>
+      <p v-if="activeHoleCount" class="legend">{{ t('triangles.holesNote') }}</p>
       <p v-if="weak.length" class="warn">
-        Узкие треугольники: {{ weak.map((w) => '△' + w.no).join(', ') }}. В них ошибка рулетки
-        бьёт по вершине до ×{{ Math.max(...weak.map((w) => w.factor)).toFixed(1) }} —
-        такие места лучше перемерить, взяв основанием другую сторону.
+        {{ t('triangles.weak', {
+          list: weak.map((w) => '△' + w.no).join(', '),
+          max: Math.max(...weak.map((w) => w.factor)).toFixed(1),
+        }) }}
       </p>
-      <div class="stat"><span>Сумма треугольников</span><b>{{ triAreaM2 }} м²</b></div>
-      <div class="stat"><span>Площадь по хордам</span>
-        <b :class="{ warn: !areaMatches }">{{ activeChordAreaM2.toFixed(3) }} м²</b></div>
+      <div class="stat"><span>{{ t('triangles.sum') }}</span><b>{{ triAreaM2 }} {{ t('common.m2') }}</b></div>
+      <div class="stat"><span>{{ t('triangles.chordArea') }}</span>
+        <b :class="{ warn: !areaMatches }">{{ activeChordAreaM2.toFixed(3) }} {{ t('common.m2') }}</b></div>
       <div v-if="Math.abs(arcExtra) > 0.0005" class="stat">
-        <span>Скругления</span><b>{{ arcExtra > 0 ? '+' : '' }}{{ arcExtra.toFixed(3) }} м²</b></div>
-      <div v-if="Math.abs(arcExtra) > 0.0005" class="stat"><span>Итого фигура</span><b>{{ areaM2 }} м²</b></div>
-      <button @click="resplit">Разбить заново по чертежу</button>
+        <span>{{ t('triangles.arcs') }}</span><b>{{ arcExtra > 0 ? '+' : '' }}{{ arcExtra.toFixed(3) }} {{ t('common.m2') }}</b></div>
+      <div v-if="Math.abs(arcExtra) > 0.0005" class="stat"><span>{{ t('triangles.total') }}</span><b>{{ areaM2 }} {{ t('common.m2') }}</b></div>
+      <button @click="resplit">{{ t('triangles.resplitFromDrawing') }}</button>
       <p v-if="err0 && !meshStale" class="err">{{ err0 }}</p>
-      <button @click="store.removeLastTriangle()">Убрать последний</button>
-      <button class="danger" @click="store.clearTriangles()">Сбросить разбивку</button>
+      <button @click="store.removeLastTriangle()">{{ t('triangles.removeLast') }}</button>
+      <button class="danger" @click="store.clearTriangles()">{{ t('triangles.clear') }}</button>
     </section>
 
     <!-- скругления -->
     <section v-if="arcRows.length">
-      <h3>Скругления ({{ arcRows.length }})</h3>
+      <h3>{{ t('triangles.arcsList', { n: arcRows.length }) }}</h3>
       <table class="measure">
-        <thead><tr><th>Сторона</th><th>Хорда</th><th>Стрелка</th><th>R</th></tr></thead>
+        <thead><tr><th>{{ t('triangles.side') }}</th><th>{{ t('triangles.chord') }}</th><th>{{ t('triangles.sagitta') }}</th><th>R</th></tr></thead>
         <tbody>
           <tr v-for="(r, i) in arcRows" :key="i">
             <td>{{ r.side }}</td><td>{{ r.chord }}</td><td>{{ r.sagitta }}</td><td>{{ r.radius }}</td>
           </tr>
         </tbody>
       </table>
-      <p class="legend">Дугу мерят хордой и стрелкой — от середины хорды до стены.</p>
+      <p class="legend">{{ t('triangles.arcNote') }}</p>
     </section>
 
     <!-- таблица замера -->
     <section v-if="measureRows.length">
-      <h3>Лист замера</h3>
+      <h3>{{ t('triangles.sheet') }}</h3>
       <table class="measure">
-        <thead><tr><th>△</th><th>Сторона</th><th>мм</th><th>Тип</th></tr></thead>
+        <thead><tr><th>△</th><th>{{ t('triangles.side') }}</th><th>{{ t('common.mm') }}</th><th>{{ t('triangles.kind') }}</th></tr></thead>
         <tbody>
-          <tr v-for="(r, i) in measureRows" :key="i" :class="{ diag: r.kind === 'Диагональ' }">
+          <tr v-for="(r, i) in measureRows" :key="i" :class="{ diag: r.kind === 'diagonal' }">
             <td>{{ r.no }}</td><td>{{ r.side }}</td><td>{{ r.len }}</td>
-            <td>{{ r.kind === 'Диагональ' ? 'диаг.' : 'контур' }}</td>
+            <td>{{ r.kind === 'diagonal' ? t('triangles.diagShort') : t('triangles.contour') }}</td>
           </tr>
         </tbody>
       </table>
-      <button @click="exportCsv">Экспорт замера (CSV)</button>
-      <button @click="copyCsv">Копировать в буфер</button>
+      <button @click="exportCsv">{{ t('triangles.exportCsv') }}</button>
+      <button @click="copyCsv">{{ t('triangles.copyCsv') }}</button>
     </section>
   </aside>
 </template>

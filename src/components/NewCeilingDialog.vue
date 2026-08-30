@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConfigurator } from '../stores/configurator'
 import { useProjects } from '../stores/projects'
 import { IconRect, IconContour, IconFreeform, IconWizard, IconCircle } from '../icons'
 import ShapeWizard from './ShapeWizard.vue'
 import type { WallSpec } from '../composables/useWizard'
 
+const { t } = useI18n()
 const store = useConfigurator()
 const projects = useProjects()
 const name = ref('')
@@ -39,53 +41,52 @@ function createFromWizard(walls: WallSpec[]) {
 <template>
   <div class="overlay" @click.self="emit('close')">
     <div :class="['dialog', { wide: kind === 'wizard' }]">
-      <h2>Новый потолок</h2>
-      <p class="sub">Появится отдельным проектом в списке слева.</p>
+      <h2>{{ t('newCeiling.title') }}</h2>
+      <p class="sub">{{ t('newCeiling.sub') }}</p>
 
-      <label class="name">Название
-        <input v-model="name" type="text" placeholder="Например: Кухня, Иванов" />
+      <label class="name">{{ t('newCeiling.name') }}
+        <input v-model="name" type="text" :placeholder="t('newCeiling.namePlaceholder')" />
       </label>
 
       <div class="kinds">
         <button :class="{ on: kind === 'rect' }" @click="kind = 'rect'">
-          <div class="ico"><IconRect :size="26" :stroke-width="1.5" /></div><span>Прямоугольник</span>
+          <div class="ico"><IconRect :size="26" :stroke-width="1.5" /></div><span>{{ t('newCeiling.rect') }}</span>
         </button>
         <button :class="{ on: kind === 'lshape' }" @click="kind = 'lshape'">
-          <div class="ico"><IconContour :size="26" :stroke-width="1.5" /></div><span>Г-образный</span>
+          <div class="ico"><IconContour :size="26" :stroke-width="1.5" /></div><span>{{ t('newCeiling.lshape') }}</span>
         </button>
         <button :class="{ on: kind === 'circle' }" @click="kind = 'circle'">
-          <div class="ico"><IconCircle :size="26" :stroke-width="1.5" /></div><span>Круг</span>
+          <div class="ico"><IconCircle :size="26" :stroke-width="1.5" /></div><span>{{ t('newCeiling.circle') }}</span>
         </button>
         <button :class="{ on: kind === 'wizard' }" @click="kind = 'wizard'">
-          <div class="ico"><IconWizard :size="26" :stroke-width="1.5" /></div><span>Мастер</span>
+          <div class="ico"><IconWizard :size="26" :stroke-width="1.5" /></div><span>{{ t('newCeiling.wizard') }}</span>
         </button>
         <button :class="{ on: kind === 'empty' }" @click="kind = 'empty'">
-          <div class="ico"><IconFreeform :size="26" :stroke-width="1.5" /></div><span>Пустой лист</span>
+          <div class="ico"><IconFreeform :size="26" :stroke-width="1.5" /></div><span>{{ t('newCeiling.blank') }}</span>
         </button>
       </div>
 
       <ShapeWizard v-if="kind === 'wizard'" @submit="createFromWizard" />
 
       <div v-else-if="kind === 'circle'" class="fields">
-        <label>Диаметр, мм <input type="number" inputmode="decimal" v-model.number="d" min="200" step="100" /></label>
+        <label>{{ t('newCeiling.diameter') }} <input type="number" inputmode="decimal" v-model.number="d" min="200" step="100" /></label>
       </div>
 
       <div v-else-if="kind !== 'empty'" class="fields">
-        <label>Ширина, мм <input type="number" inputmode="decimal" v-model.number="w" min="100" step="50" /></label>
-        <label>Длина, мм <input type="number" inputmode="decimal" v-model.number="h" min="100" step="50" /></label>
+        <label>{{ t('newCeiling.width') }} <input type="number" inputmode="decimal" v-model.number="w" min="100" step="50" /></label>
+        <label>{{ t('newCeiling.length') }} <input type="number" inputmode="decimal" v-model.number="h" min="100" step="50" /></label>
         <template v-if="kind === 'lshape'">
-          <label>Вырез: ширина <input type="number" inputmode="decimal" v-model.number="cw" min="50" step="50" /></label>
-          <label>Вырез: глубина <input type="number" inputmode="decimal" v-model.number="ch" min="50" step="50" /></label>
+          <label>{{ t('newCeiling.cutWidth') }} <input type="number" inputmode="decimal" v-model.number="cw" min="50" step="50" /></label>
+          <label>{{ t('newCeiling.cutDepth') }} <input type="number" inputmode="decimal" v-model.number="ch" min="50" step="50" /></label>
         </template>
       </div>
       <p v-else class="hint">
-        Чистый холст. Включится режим <b>Рисовать</b>: кликайте по холсту, расставляя углы,
-        и замкните контур по первой точке.
+        {{ t('newCeiling.blankHint', { mode: t('mode.draw') }) }}
       </p>
 
       <div class="actions">
-        <button class="ghost" @click="emit('close')">Отмена</button>
-        <button v-if="kind !== 'wizard'" class="primary" @click="create">Создать</button>
+        <button class="ghost" @click="emit('close')">{{ t('common.cancel') }}</button>
+        <button v-if="kind !== 'wizard'" class="primary" @click="create">{{ t('newCeiling.create') }}</button>
       </div>
     </div>
   </div>

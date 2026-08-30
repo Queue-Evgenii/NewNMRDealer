@@ -11,12 +11,14 @@
  * вводится: она замыкает контур, её длину считает программа.
  */
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   wallsToPoints, closingLength, wizardAreaM2, contourProblem, cornerName, defaultWalls,
   type WallSpec,
 } from '../composables/useWizard'
 import { IconTurnLeft, IconTurnRight, IconStraight } from '../icons'
 
+const { t } = useI18n()
 const emit = defineEmits<{ (e: 'submit', walls: WallSpec[]): void }>()
 
 const count = ref(4)
@@ -46,11 +48,11 @@ const label = (i: number) => walls.value[i]?.name.trim() || cornerName(i)
 /** Куда ведёт стена, начинающаяся в углу i. */
 const nextLabel = (i: number) => label((i + 1) % walls.value.length)
 
-const turns = [
-  { value: -90, icon: IconTurnLeft, title: 'налево' },
-  { value: 90, icon: IconTurnRight, title: 'направо' },
-  { value: 0, icon: IconStraight, title: 'прямо, без поворота' },
-]
+const turns = computed(() => [
+  { value: -90, icon: IconTurnLeft, title: t('wizard.turnLeft') },
+  { value: 90, icon: IconTurnRight, title: t('wizard.turnRight') },
+  { value: 0, icon: IconStraight, title: t('wizard.straight') },
+])
 
 const viewBox = computed(() => {
   const pts = points.value
@@ -123,10 +125,10 @@ function submit() {
 <template>
   <div class="wizard">
     <div class="corners">
-      <span class="cap">Углов в комнате</span>
-      <button :disabled="count <= 3" title="Убрать угол" @click="count -= 1">−</button>
+      <span class="cap">{{ t('wizard.corners') }}</span>
+      <button :disabled="count <= 3" :title="t('wizard.removeCorner')" @click="count -= 1">−</button>
       <b>{{ count }}</b>
-      <button :disabled="count >= 16" title="Добавить угол" @click="count += 1">＋</button>
+      <button :disabled="count >= 16" :title="t('wizard.addCorner')" @click="count += 1">＋</button>
       <div class="quick">
         <button v-for="n in [4, 6, 8]" :key="n" :class="{ on: count === n }" @click="count = n">{{ n }}</button>
       </div>
@@ -134,10 +136,10 @@ function submit() {
 
     <!-- углы: только имена, ничего больше -->
     <div class="names">
-      <span class="cap">Названия углов</span>
+      <span class="cap">{{ t('wizard.cornerNames') }}</span>
       <div class="chips">
         <input v-for="(w, i) in walls" :key="i" v-model="w.name" type="text"
-          :placeholder="cornerName(i)" :title="`Угол ${cornerName(i)}`" />
+          :placeholder="cornerName(i)" :title="t('wizard.corner', { name: cornerName(i) })" />
       </div>
     </div>
 
@@ -153,13 +155,13 @@ function submit() {
         </svg>
         <div class="sum">
           <span v-if="problem" class="bad-text">{{ problem }}</span>
-          <span v-else>Площадь <b>{{ areaM2.toFixed(2) }}</b> м²</span>
+          <span v-else>{{ t('wizard.area') }} <b>{{ areaM2.toFixed(2) }}</b> {{ t('common.m2') }}</span>
         </div>
       </div>
 
       <!-- стены: каждая соединяет два угла -->
       <div class="walls">
-        <span class="cap">Стены</span>
+        <span class="cap">{{ t('wizard.walls') }}</span>
         <div v-for="(w, i) in walls" :key="i" class="wall"
           @mouseenter="hot = i" @mouseleave="hot = -1">
           <span class="path"><b>{{ label(i) }}</b> → <b>{{ nextLabel(i) }}</b></span>
@@ -167,11 +169,11 @@ function submit() {
           <template v-if="i < walls.length - 1">
             <input v-model.number="w.length" type="number" inputmode="numeric" min="1" step="10" />
             <span class="turn">
-              <span class="turn-cap">поворот в {{ nextLabel(i) }}</span>
+              <span class="turn-cap">{{ t('wizard.turnIn', { name: nextLabel(i) }) }}</span>
               <span class="turns">
-                <button v-for="t in turns" :key="t.value" :class="{ on: w.turn === t.value }"
-                  :title="'Поворот ' + t.title" @click="w.turn = t.value">
-                  <component :is="t.icon" :size="14" :stroke-width="1.75" />
+                <button v-for="tn in turns" :key="tn.value" :class="{ on: w.turn === tn.value }"
+                  :title="t('wizard.turnTitle', { dir: tn.title })" @click="w.turn = tn.value">
+                  <component :is="tn.icon" :size="14" :stroke-width="1.75" />
                 </button>
               </span>
             </span>
@@ -179,13 +181,13 @@ function submit() {
 
           <template v-else>
             <span class="closing">{{ closing }}</span>
-            <span class="turn"><span class="turn-cap">замыкает контур — считается сама</span></span>
+            <span class="turn"><span class="turn-cap">{{ t('wizard.closes') }}</span></span>
           </template>
         </div>
       </div>
     </div>
 
-    <button class="go" :disabled="!!problem || areaM2 <= 0" @click="submit">Построить контур</button>
+    <button class="go" :disabled="!!problem || areaM2 <= 0" @click="submit">{{ t('wizard.build') }}</button>
   </div>
 </template>
 

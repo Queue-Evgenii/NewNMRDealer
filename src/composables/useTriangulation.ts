@@ -9,6 +9,8 @@
 //
 // Все размеры — миллиметры, как и весь остальной конструктор.
 
+import { t } from '../i18n'
+
 export type XY = { x: number; y: number }
 
 /** Вершина ближе этого расстояния к существующей — «приваривается» к ней. */
@@ -89,11 +91,11 @@ export function triangleAngles(a: number, b: number, c: number): [number, number
 /** Проверка «неравенства треугольника»; null — треугольник существует. */
 export function triangleError(a: number, b: number, c: number): string | null {
   if (![a, b, c].every((v) => Number.isFinite(v) && v > 0)) {
-    return 'Все три стороны должны быть больше нуля'
+    return t('measure.errSidesPositive')
   }
   const slack = Math.min(a + b - c, a + c - b, b + c - a)
-  if (slack <= 0) return 'Такого треугольника не существует: сумма двух сторон должна быть больше третьей'
-  if (slack < 1) return 'Треугольник вырожденный — стороны почти на одной линии'
+  if (slack <= 0) return t('measure.errNotATriangle')
+  if (slack < 1) return t('measure.errDegenerate')
   return null
 }
 

@@ -4,9 +4,11 @@
  * «окошка», поэтому дырку не нужно вырезать масками и она всегда точна.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { markTourSeen, placeCard, selectorOf, visibleSteps, type TourStep } from '../composables/useTour'
 import { IconClose } from '../icons'
 
+const { t } = useI18n()
 const emit = defineEmits<{ (e: 'close'): void }>()
 
 const steps = ref<TourStep[]>([])
@@ -83,15 +85,15 @@ onBeforeUnmount(() => {
     <div ref="cardEl" class="card" :style="card">
       <div class="head">
         <span class="no">{{ index + 1 }} / {{ steps.length }}</span>
-        <button class="x" title="Пропустить" @click="finish">
+        <button class="x" :title="t('tour.skip')" @click="finish">
           <IconClose :size="16" :stroke-width="1.75" />
         </button>
       </div>
       <h3>{{ step.title }}</h3>
       <p>{{ step.text }}</p>
       <div class="acts">
-        <button v-if="index > 0" class="ghost" @click="go(-1)">Назад</button>
-        <button class="primary" @click="go(1)">{{ last ? 'Готово' : 'Далее' }}</button>
+        <button v-if="index > 0" class="ghost" @click="go(-1)">{{ t('common.back') }}</button>
+        <button class="primary" @click="go(1)">{{ last ? t('common.done') : t('common.next') }}</button>
       </div>
     </div>
   </div>

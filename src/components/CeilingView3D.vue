@@ -14,10 +14,10 @@ const { shapesView, settings, order } = storeToRefs(store)
  * тёмный фон сцены, и цвет выглядел грязнее, чем выбран.
  */
 function filmFinish(film: string) {
-  if (film === 'Мат') return { metalness: 0.0, roughness: 0.95 }
-  if (film === 'Сатин') return { metalness: 0.08, roughness: 0.55 }
-  if (film === 'Фактура') return { metalness: 0.05, roughness: 0.7 }
-  return { metalness: 0.25, roughness: 0.15 } // Глянец
+  if (film === 'mat') return { metalness: 0.0, roughness: 0.95 }
+  if (film === 'satin') return { metalness: 0.08, roughness: 0.55 }
+  if (film === 'texture') return { metalness: 0.05, roughness: 0.7 }
+  return { metalness: 0.25, roughness: 0.15 } // глянец
 }
 
 const host = ref<HTMLDivElement | null>(null)

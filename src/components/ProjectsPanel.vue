@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Список проектов: каждый проект — отдельный чертёж со своим сохранением.
 import { ref, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useProjects } from '../stores/projects'
 import { shortWhen } from '../composables/useWhen'
@@ -10,6 +11,7 @@ import { IconProjectNew, IconRename, IconCopy, IconDelete, IconSettings } from '
 defineProps<{ compact?: boolean }>()
 const emit = defineEmits<{ (e: 'pick'): void; (e: 'settings'): void }>()
 
+const { t } = useI18n()
 const projects = useProjects()
 const { ordered, currentId } = storeToRefs(projects)
 
@@ -50,11 +52,11 @@ function confirmDelete() {
 <template>
   <div :class="['projects', { compact }]">
     <div class="head">
-      <h3>Проекты</h3>
-      <button class="add" title="Новый проект" @click="addProject">
+      <h3>{{ t('projects.title') }}</h3>
+      <button class="add" :title="t('projects.add')" @click="addProject">
         <IconProjectNew :size="16" :stroke-width="1.75" />
       </button>
-      <button class="add" data-tour="settings" title="Настройки" @click="emit('settings')">
+      <button class="add" data-tour="settings" :title="t('projects.settings')" @click="emit('settings')">
         <IconSettings :size="16" :stroke-width="1.75" />
       </button>
     </div>
@@ -71,16 +73,16 @@ function confirmDelete() {
             <span class="when">{{ shortWhen(p.updatedAt) }}</span>
           </div>
           <div class="row sub">
-            <span class="muted">{{ p.areaM2 ? p.areaM2.toFixed(2) + ' м²' : 'пусто' }}</span>
+            <span class="muted">{{ p.areaM2 ? p.areaM2.toFixed(2) + ' ' + t('common.m2') : t('common.empty') }}</span>
             <span v-if="p.client" class="muted client">{{ p.client }}</span>
             <div class="acts">
-              <button title="Переименовать" @click.stop="startRename(p.id, p.name)">
+              <button :title="t('projects.rename')" @click.stop="startRename(p.id, p.name)">
                 <IconRename :size="14" :stroke-width="1.75" />
               </button>
-              <button title="Дубликат" @click.stop="projects.duplicate(p.id)">
+              <button :title="t('projects.duplicate')" @click.stop="projects.duplicate(p.id)">
                 <IconCopy :size="14" :stroke-width="1.75" />
               </button>
-              <button class="danger" title="Удалить проект" @click.stop="pendingDelete = { id: p.id, name: p.name }">
+              <button class="danger" :title="t('projects.remove')" @click.stop="pendingDelete = { id: p.id, name: p.name }">
                 <IconDelete :size="14" :stroke-width="1.75" />
               </button>
             </div>
@@ -90,9 +92,8 @@ function confirmDelete() {
     </ul>
 
     <ConfirmDialog v-if="pendingDelete"
-      title="Удалить проект?"
-      :message="`Проект «${pendingDelete.name}» и его чертёж будут удалены без возможности вернуть.`"
-      confirm-text="Удалить" @confirm="confirmDelete" @cancel="pendingDelete = null" />
+      :title="t('projects.removeTitle')"
+      :message="t('projects.removeMessage', { name: pendingDelete.name })" @confirm="confirmDelete" @cancel="pendingDelete = null" />
   </div>
 </template>
 

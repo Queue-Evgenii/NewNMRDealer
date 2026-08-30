@@ -61,7 +61,7 @@ describe('метод треугольников', () => {
 
     const rows = store.measureRows
     expect(rows).toHaveLength(12) // 4 треугольника × 3 стороны
-    expect(rows.filter((r) => r.kind === 'Диагональ')).toHaveLength(6)
+    expect(rows.filter((r) => r.kind === 'diagonal')).toHaveLength(6)
     expect(rows.every((r) => !r.side.includes('?'))).toBe(true)
   })
 

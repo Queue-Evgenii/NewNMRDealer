@@ -57,11 +57,11 @@ describe('мастер контура', () => {
   })
 
   it('углы по умолчанию получают буквы, введённое имя сохраняется', () => {
-    expect(cornerName(0)).toBe('А')
-    expect(cornerName(2)).toBe('В')
+    expect(cornerName(0)).toBe('A')
+    expect(cornerName(2)).toBe('C')
     const pts = wallsToPoints([wall(1000, 90, 'у окна'), wall(1000), wall(1000), wall(1000)])
     expect(pts[0].name).toBe('у окна')
-    expect(pts[1].name).toBe('Б')
+    expect(pts[1].name).toBe('B')
   })
 
   it('заготовка по числу углов всегда даёт замкнутый контур', () => {

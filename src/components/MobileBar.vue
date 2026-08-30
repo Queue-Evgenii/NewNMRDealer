@@ -3,8 +3,10 @@
 // и справка, справа — история и зум. Остальное живёт в нижней шторке.
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
+import { useI18n } from 'vue-i18n'
 import { IconPlus, IconMinus, IconHelp, IconUndo, IconRedo, IconFit } from '../icons'
 
+const { t } = useI18n()
 const store = useConfigurator()
 const { past, future } = storeToRefs(store)
 
@@ -18,27 +20,27 @@ defineEmits<{
 
 <template>
   <div class="left">
-    <button class="fab primary" data-tour="new" title="Новый потолок" @click="$emit('new')">
+    <button class="fab primary" data-tour="new" :title="t('mobile.newCeiling')" @click="$emit('new')">
       <IconPlus :size="22" :stroke-width="2" />
     </button>
-    <button class="fab" title="Как это работает" @click="$emit('help')">
+    <button class="fab" :title="t('mobile.help')" @click="$emit('help')">
       <IconHelp :size="20" :stroke-width="1.75" />
     </button>
   </div>
   <div class="right">
-    <button class="fab" :disabled="!past.length" title="Отменить" @click="store.undo()">
+    <button class="fab" :disabled="!past.length" :title="t('mobile.undo')" @click="store.undo()">
       <IconUndo :size="20" :stroke-width="1.75" />
     </button>
-    <button class="fab" :disabled="!future.length" title="Повторить" @click="store.redo()">
+    <button class="fab" :disabled="!future.length" :title="t('mobile.redo')" @click="store.redo()">
       <IconRedo :size="20" :stroke-width="1.75" />
     </button>
-    <button class="fab" title="Вписать" @click="$emit('fit')">
+    <button class="fab" :title="t('mobile.fit')" @click="$emit('fit')">
       <IconFit :size="20" :stroke-width="1.75" />
     </button>
-    <button class="fab" title="Приблизить" @click="$emit('zoom', 1.35)">
+    <button class="fab" :title="t('mobile.zoomIn')" @click="$emit('zoom', 1.35)">
       <IconPlus :size="20" :stroke-width="1.75" />
     </button>
-    <button class="fab" title="Отдалить" @click="$emit('zoom', 1 / 1.35)">
+    <button class="fab" :title="t('mobile.zoomOut')" @click="$emit('zoom', 1 / 1.35)">
       <IconMinus :size="20" :stroke-width="1.75" />
     </button>
   </div>

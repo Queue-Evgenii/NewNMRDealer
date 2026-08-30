@@ -8,6 +8,7 @@
  * основные действия появляются здесь (showView) — панели инструментов там нет.
  */
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import { CURRENCY } from '../pricing'
@@ -23,6 +24,7 @@ defineProps<{ showView?: boolean }>()
 // окно цвета открывает рабочая область — см. ConstructorWorkspace
 const emit = defineEmits<{ (e: 'color'): void }>()
 
+const { t } = useI18n()
 const store = useConfigurator()
 const {
   totals, activeStats, activeShape, shapes, shapeStats, hostOfActive,
@@ -78,9 +80,9 @@ async function shareLink() {
   try {
     const url = await buildShareLink(JSON.parse(store.serialize()))
     await navigator.clipboard.writeText(url)
-    shareState.value = `Ссылка скопирована · ${url.length} символов`
+    shareState.value = t('panel.shareCopied', { n: url.length }, url.length)
   } catch {
-    shareState.value = 'Не удалось скопировать — проверьте доступ к буферу обмена'
+    shareState.value = t('panel.shareFailed')
   }
   setTimeout(() => { shareState.value = '' }, 4000)
 }
@@ -106,137 +108,136 @@ const money = (v: number) => v.toFixed(0)
 <template>
   <aside class="panel">
     <section>
-      <h3>Чертёж</h3>
-      <div class="stat"><span>Площадь</span><b>{{ totals.areaM2.toFixed(2) }} м²</b></div>
-      <div class="stat"><span>Периметр</span><b>{{ totals.perimM.toFixed(2) }} м</b></div>
-      <div class="stat total"><span>Цена</span><b>{{ money(totals.price) }} {{ CURRENCY }}</b></div>
+      <h3>{{ t('panel.drawing') }}</h3>
+      <div class="stat"><span>{{ t('panel.area') }}</span><b>{{ totals.areaM2.toFixed(2) }} {{ t('common.m2') }}</b></div>
+      <div class="stat"><span>{{ t('panel.perimeter') }}</span><b>{{ totals.perimM.toFixed(2) }} {{ t('common.m') }}</b></div>
+      <div class="stat total"><span>{{ t('panel.price') }}</span><b>{{ money(totals.price) }} {{ CURRENCY }}</b></div>
       <p v-if="noCeiling" class="warn">
-        Нет ни одного полотна: контуры не замкнуты или помечены вырезами.
+        {{ t('panel.noCeilings') }}
       </p>
-      <p v-else-if="openShapes" class="warn">Есть незамкнутые контуры — они в расчёт не идут.</p>
+      <p v-else-if="openShapes" class="warn">{{ t('panel.openContours') }}</p>
     </section>
 
     <!-- стороны фигуры: подпись и длина, как в листе замера -->
     <section v-if="sides.length">
-      <h3>Стороны</h3>
+      <h3>{{ t('panel.sides') }}</h3>
       <ul class="sides">
         <li v-for="s in sides" :key="s.key" :class="{ on: s.key === selectedEdgeKey }">
           <button class="pick" @click="store.selectEdge(s.key)">{{ s.name }}</button>
           <input type="number" inputmode="decimal" min="1" step="10" :value="s.length"
             @focus="store.selectEdge(s.key)"
             @change="setSide(s.key, ($event.target as HTMLInputElement).value)" />
-          <span class="unit">мм</span>
+          <span class="unit">{{ t('common.mm') }}</span>
         </li>
       </ul>
     </section>
 
     <!-- угол: координаты и скругление числами -->
     <section v-if="selectedPoint">
-      <h3>Угол {{ cornerName }}</h3>
-      <div v-if="cornerDeg !== null" class="stat"><span>Раствор</span><b>{{ cornerDeg }}°</b></div>
-      <label class="row"><span>X, мм</span>
+      <h3>{{ t('panel.corner', { name: cornerName }) }}</h3>
+      <div v-if="cornerDeg !== null" class="stat"><span>{{ t('panel.cornerSpread') }}</span><b>{{ cornerDeg }}°</b></div>
+      <label class="row"><span>{{ t('panel.x') }}</span>
         <input type="number" inputmode="decimal" step="10" :value="selectedPoint.x"
           @change="moveCorner(Number(($event.target as HTMLInputElement).value), selectedPoint.y)" /></label>
-      <label class="row"><span>Y, мм</span>
+      <label class="row"><span>{{ t('panel.y') }}</span>
         <input type="number" inputmode="decimal" step="10" :value="selectedPoint.y"
           @change="moveCorner(selectedPoint.x, Number(($event.target as HTMLInputElement).value))" /></label>
-      <label class="row"><span>Скругление R, мм</span>
+      <label class="row"><span>{{ t('panel.roundR') }}</span>
         <input type="number" inputmode="decimal" min="10" step="10" v-model.number="cornerR" /></label>
       <div class="two">
-        <button @click="roundCorner">Скруглить</button>
-        <button class="danger" @click="store.deleteSelected()">Удалить угол</button>
+        <button @click="roundCorner">{{ t('panel.round') }}</button>
+        <button class="danger" @click="store.deleteSelected()">{{ t('panel.deleteCorner') }}</button>
       </div>
     </section>
 
     <!-- сторона: длина и прогиб дуги — то же, что диктуют на замере -->
     <section v-if="selectedEdge">
-      <h3>Сторона {{ sideName }}</h3>
-      <label class="row"><span>Прогиб дуги, мм</span>
+      <h3>{{ t('panel.side', { name: sideName }) }}</h3>
+      <label class="row"><span>{{ t('panel.bulge') }}</span>
         <input type="number" inputmode="decimal" step="10" :value="sagitta"
           @change="store.setEdgeSagitta(selectedEdge.key, Number(($event.target as HTMLInputElement).value))" /></label>
       <div class="two">
-        <button @click="store.insertOnEdge(selectedEdge.key)">Разделить</button>
+        <button @click="store.insertOnEdge(selectedEdge.key)">{{ t('panel.split') }}</button>
         <button :disabled="!selectedEdge.props.bulge"
-          @click="store.straightenEdge(selectedEdge.key)">Выпрямить</button>
+          @click="store.straightenEdge(selectedEdge.key)">{{ t('panel.straighten') }}</button>
       </div>
     </section>
 
     <section>
-      <h3>Выбранное полотно</h3>
+      <h3>{{ t('panel.selectedShape') }}</h3>
       <template v-if="!activeShape.closed">
-        <p class="warn">Контур не замкнут — площадь и цена по нему не считаются.</p>
+        <p class="warn">{{ t('panel.openWarn') }}</p>
         <button :disabled="activeShape.points.length < 3" @click="store.toggleClosed()">
-          Замкнуть контур
+          {{ t('panel.closeContour') }}
         </button>
       </template>
       <template v-else>
         <div class="two seg">
           <button :class="{ on: activeShape.kind === 'ceiling' }"
-            @click="store.setShapeKind(activeShape.id, 'ceiling')">Полотно</button>
+            @click="store.setShapeKind(activeShape.id, 'ceiling')">{{ t('panel.ceiling') }}</button>
           <button :class="{ on: activeShape.kind === 'hole' }"
             :disabled="activeShape.kind !== 'hole' && !hostOfActive"
-            title="Вырез возможен только внутри другого полотна"
-            @click="store.setShapeKind(activeShape.id, 'hole')">Вырез</button>
+            :title="t('panel.holeOnlyInside')"
+            @click="store.setShapeKind(activeShape.id, 'hole')">{{ t('panel.hole') }}</button>
         </div>
         <p v-if="lostHole" class="warn">
-          Этот вырез не лежит внутри полотна — он ничего не вычитает и в расчёт не идёт.
-          Верните «Полотно».
+          {{ t('panel.holeOrphan') }}
         </p>
         <!-- у выреза нет ни цвета, ни своего яруса: он живёт настройками полотна, в котором лежит -->
         <template v-if="activeShape.kind === 'ceiling'">
-          <div class="row"><span>Цвет и плёнка</span>
+          <div class="row"><span>{{ t('panel.colorAndFilm') }}</span>
             <button class="color-field" @click="emit('color')">
               <span class="color-sw" :style="{ background: activeShape.colorHex }"></span>
               <span class="color-nm">{{ activeShape.film }}</span>
             </button>
           </div>
-          <label class="row"><span>Ярус</span>
+          <label class="row"><span>{{ t('panel.level') }}</span>
             <input type="number" inputmode="numeric" min="1" step="1" :value="activeShape.level"
               @change="store.setShapeLevel(activeShape.id, Number(($event.target as HTMLInputElement).value))" /></label>
           <!-- ярус 1 — основной потолок; всё, что ниже, опускается на перепад -->
-          <label v-if="activeShape.level > 1" class="row"><span>Перепад вниз, мм</span>
+          <label v-if="activeShape.level > 1" class="row"><span>{{ t('panel.drop') }}</span>
             <input type="number" inputmode="decimal" min="0" step="10" :value="activeShape.drop"
               @change="store.setShapeDrop(activeShape.id, Number(($event.target as HTMLInputElement).value))" /></label>
-          <div class="stat"><span>Площадь</span><b>{{ activeStats.areaM2.toFixed(2) }} м²</b></div>
-          <div class="stat"><span>Периметр</span><b>{{ activeStats.perimM.toFixed(2) }} м</b></div>
-          <div class="stat total"><span>Цена</span><b>{{ money(activeStats.price) }} {{ CURRENCY }}</b></div>
+          <div class="stat"><span>{{ t('panel.area') }}</span><b>{{ activeStats.areaM2.toFixed(2) }} {{ t('common.m2') }}</b></div>
+          <div class="stat"><span>{{ t('panel.perimeter') }}</span><b>{{ activeStats.perimM.toFixed(2) }} {{ t('common.m') }}</b></div>
+          <div class="stat total"><span>{{ t('panel.price') }}</span><b>{{ money(activeStats.price) }} {{ CURRENCY }}</b></div>
         </template>
       </template>
     </section>
 
     <!-- вид (на телефоне тумблеры живут здесь, а не в панели инструментов) -->
     <section v-if="showView" class="view">
-      <h3>Вид</h3>
+      <h3>{{ t('panel.view') }}</h3>
       <div class="toggles">
         <button :class="{ on: settings.showGrid }"
           @click="store.updateSettings({ showGrid: !settings.showGrid })">
-          <IconGrid :size="16" :stroke-width="1.75" />Сетка</button>
+          <IconGrid :size="16" :stroke-width="1.75" />{{ t('toolbar.grid') }}</button>
         <button :class="{ on: settings.showMeasures }"
           @click="store.updateSettings({ showMeasures: !settings.showMeasures })">
-          <IconDimensions :size="16" :stroke-width="1.75" />Размеры</button>
+          <IconDimensions :size="16" :stroke-width="1.75" />{{ t('toolbar.dims') }}</button>
         <button :class="{ on: settings.showTriangles }"
           @click="store.updateSettings({ showTriangles: !settings.showTriangles })">
-          <IconTriangles :size="16" :stroke-width="1.75" />Треуг.</button>
+          <IconTriangles :size="16" :stroke-width="1.75" />{{ t('toolbar.triangles') }}</button>
         <button :class="{ on: settings.snap }"
           @click="store.updateSettings({ snap: !settings.snap })">
-          <IconSnap :size="16" :stroke-width="1.75" />Привязка</button>
+          <IconSnap :size="16" :stroke-width="1.75" />{{ t('toolbar.snap') }}</button>
       </div>
       <div class="acts">
         <button :disabled="!past.length" @click="store.undo()">
-          <IconUndo :size="16" :stroke-width="1.75" />Отмена</button>
+          <IconUndo :size="16" :stroke-width="1.75" />{{ t('toolbar.undo') }}</button>
         <button :disabled="!future.length" @click="store.redo()">
-          <IconRedo :size="16" :stroke-width="1.75" />Повтор</button>
+          <IconRedo :size="16" :stroke-width="1.75" />{{ t('toolbar.redo') }}</button>
         <button @click="store.beginDraw()">
-          <IconDraw :size="16" :stroke-width="1.75" />Фигура</button>
+          <IconDraw :size="16" :stroke-width="1.75" />{{ t('panel.shape') }}</button>
         <button class="danger" @click="selectedPointId ? store.deleteSelected() : store.deleteActiveShape()">
-          <IconDelete :size="16" :stroke-width="1.75" />Удалить</button>
+          <IconDelete :size="16" :stroke-width="1.75" />{{ t('common.delete') }}</button>
       </div>
     </section>
     <section class="io">
-      <button @click="shareLink">Ссылка на чертёж</button>
+      <button @click="shareLink">{{ t('panel.shareLink') }}</button>
       <p v-if="shareState" class="hint-small">{{ shareState }}</p>
-      <button @click="exportJSON">Экспорт JSON</button>
-      <label class="import">Импорт JSON
+      <button @click="exportJSON">{{ t('panel.exportJson') }}</button>
+      <label class="import">{{ t('panel.importJson') }}
         <input type="file" accept="application/json" @change="importJSON" hidden />
       </label>
     </section>

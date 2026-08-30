@@ -1,38 +1,46 @@
 /**
  * Цвет полотна. Он живёт на самом полотне (`Shape.colorHex`) и больше нигде:
  * у каждого яруса свой цвет, отдельной «настройки по умолчанию» нет.
+ *
+ * В чертеже хранится только hex — название ходового цвета показывается по
+ * идентификатору и переводится, а свой оттенок так и остаётся числом.
  */
+import { t } from './i18n'
 
 export interface CeilingColor {
-  name: string
+  id: string
   hex: string
 }
 
-export const DEFAULT_COLOR: CeilingColor = { name: 'Белый', hex: '#f2f4f7' }
-
 /** Ходовые цвета: с них начинается почти каждый заказ. */
 export const BASIC_COLORS: CeilingColor[] = [
-  { name: 'Белый', hex: '#f2f4f7' },
-  { name: 'Молочный', hex: '#f3ecdd' },
-  { name: 'Слоновая кость', hex: '#efe4c8' },
-  { name: 'Бежевый', hex: '#e3cfae' },
-  { name: 'Песочный', hex: '#d9bd8a' },
-  { name: 'Светло-серый', hex: '#c3c9d1' },
-  { name: 'Серый', hex: '#8f98a3' },
-  { name: 'Графит', hex: '#4a505a' },
-  { name: 'Чёрный', hex: '#17191d' },
-  { name: 'Голубой', hex: '#8fc4e8' },
-  { name: 'Синий', hex: '#2c5aa8' },
-  { name: 'Бирюзовый', hex: '#2fa5a8' },
-  { name: 'Зелёный', hex: '#3f8f5c' },
-  { name: 'Салатовый', hex: '#9ec94a' },
-  { name: 'Жёлтый', hex: '#edc63a' },
-  { name: 'Оранжевый', hex: '#e2762a' },
-  { name: 'Красный', hex: '#c8322f' },
-  { name: 'Бордовый', hex: '#7b1f2b' },
-  { name: 'Сиреневый', hex: '#9b7fc4' },
-  { name: 'Розовый', hex: '#e39ab5' },
+  { id: 'white', hex: '#f2f4f7' },
+  { id: 'milk', hex: '#f3ecdd' },
+  { id: 'ivory', hex: '#efe4c8' },
+  { id: 'beige', hex: '#e3cfae' },
+  { id: 'sand', hex: '#d9bd8a' },
+  { id: 'lightGrey', hex: '#c3c9d1' },
+  { id: 'grey', hex: '#8f98a3' },
+  { id: 'graphite', hex: '#4a505a' },
+  { id: 'black', hex: '#17191d' },
+  { id: 'skyBlue', hex: '#8fc4e8' },
+  { id: 'blue', hex: '#2c5aa8' },
+  { id: 'turquoise', hex: '#2fa5a8' },
+  { id: 'green', hex: '#3f8f5c' },
+  { id: 'lime', hex: '#9ec94a' },
+  { id: 'yellow', hex: '#edc63a' },
+  { id: 'orange', hex: '#e2762a' },
+  { id: 'red', hex: '#c8322f' },
+  { id: 'burgundy', hex: '#7b1f2b' },
+  { id: 'lilac', hex: '#9b7fc4' },
+  { id: 'pink', hex: '#e39ab5' },
 ]
+
+export const DEFAULT_COLOR: CeilingColor = BASIC_COLORS[0]
+
+export function colorLabel(id: string): string {
+  return t(`color.names.${id}`)
+}
 
 export function rgbOf(hex: string): { r: number; g: number; b: number } {
   const h = hex.replace('#', '')

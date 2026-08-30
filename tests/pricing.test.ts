@@ -28,15 +28,15 @@ describe('цена по статичному прайсу', () => {
     const s = statsOf(id)
     expect(s.areaM2).toBeCloseTo(12, 3)
     expect(s.perimM).toBeCloseTo(14, 3)
-    expect(s.price).toBeCloseTo(12 * (FILM_PER_M2['Глянец'] + WORK_PER_M2) + 14 * GARPUN_PER_M, 3)
+    expect(s.price).toBeCloseTo(12 * (FILM_PER_M2['gloss'] + WORK_PER_M2) + 14 * GARPUN_PER_M, 3)
   })
 
   it('плёнка меняет цену полотна', () => {
     const id = rect(0, 0, 4000, 3000)
     const before = statsOf(id).price
-    store.setShapeFilm(id, 'Фактура')
+    store.setShapeFilm(id, 'texture')
     expect(statsOf(id).price).toBeGreaterThan(before)
-    expect(statsOf(id).price - before).toBeCloseTo(12 * (FILM_PER_M2['Фактура'] - FILM_PER_M2['Глянец']), 3)
+    expect(statsOf(id).price - before).toBeCloseTo(12 * (FILM_PER_M2['texture'] - FILM_PER_M2['gloss']), 3)
   })
 
   it('вырез уменьшает площадь и цену, но добавляет обвод', () => {
@@ -56,7 +56,7 @@ describe('цена по статичному прайсу', () => {
     const a = rect(0, 0, 4000, 3000)
     const b = rect(6000, 0, 2000, 2000)
     store.setShapeLevel(b, 2, 150)
-    store.setShapeFilm(b, 'Мат')
+    store.setShapeFilm(b, 'mat')
 
     expect(store.totals.areaM2).toBeCloseTo(statsOf(a).areaM2 + statsOf(b).areaM2, 3)
     expect(store.totals.price).toBeCloseTo(statsOf(a).price + statsOf(b).price, 3)

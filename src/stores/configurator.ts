@@ -14,8 +14,9 @@ import {
 } from '../composables/useGeometry'
 import { contourProblem, wallsToPoints, type WallSpec } from '../composables/useWizard'
 import { DEFAULT_COLOR, normalizeHex } from '../ceilingColors'
+import { t } from '../i18n'
 import { priceOf } from '../pricing'
-import { DEFAULT_FILM, FILMS } from '../filmColors'
+import { DEFAULT_FILM, FILMS, LEGACY_FILMS } from '../filmColors'
 import {
   arcInfo,
   arcLength,
@@ -217,7 +218,7 @@ function labelIndex(shape: Shape, all: Shape[]): Map<string, string> {
   const m = new Map<string, string>()
   shapePoints(shape).forEach((p, i) => m.set(p.id, p.name || String(i + 1)))
   let k = 0
-  for (const h of holesOf(shape, all)) for (const p of h.points) m.set(p.id, 'В' + String(++k))
+  for (const h of holesOf(shape, all)) for (const p of h.points) m.set(p.id, 'H' + String(++k))
   return m
 }
 /** Все вершины фигуры: контур + внутренние точки замера. */
@@ -441,13 +442,13 @@ export const useConfigurator = defineStore('configurator', {
       return out
     },
     /** Таблица замера активной фигуры: по три стороны на треугольник. */
-    measureRows(): { no: number; side: string; len: number; kind: 'Контур' | 'Диагональ'; area: number }[] {
+    measureRows(): { no: number; side: string; len: number; kind: 'contour' | 'diagonal'; area: number }[] {
       const s = this.activeShape as Shape
       const all = this.shapes as Shape[]
       const byId = meshIndex(s, all)
       const num = labelIndex(s, all)
       const contour = contourKeys(s, all)
-      const rows: { no: number; side: string; len: number; kind: 'Контур' | 'Диагональ'; area: number }[] = []
+      const rows: { no: number; side: string; len: number; kind: 'contour' | 'diagonal'; area: number }[] = []
       s.triangles.forEach((t, i) => {
         const ids: [string, string][] = [[t.a, t.b], [t.b, t.c], [t.c, t.a]]
         const lens = ids.map(([u, v]) => {
@@ -460,7 +461,7 @@ export const useConfigurator = defineStore('configurator', {
             no: i + 1,
             side: (num.get(u) ?? '?') + '–' + (num.get(v) ?? '?'),
             len: Math.round(lens[k]),
-            kind: contour.has(edgeKey(u, v)) ? 'Контур' : 'Диагональ',
+            kind: contour.has(edgeKey(u, v)) ? 'contour' : 'diagonal',
             area,
           })
         })
@@ -1194,7 +1195,7 @@ export const useConfigurator = defineStore('configurator', {
      */
     insertFromWalls(walls: WallSpec[]): string | null {
       const pts = wallsToPoints(walls)
-      if (pts.length < 3) return 'Углов должно быть хотя бы три'
+      if (pts.length < 3) return t('wizard.errFew')
       const bad = contourProblem(pts)
       if (bad) return bad
       this.snapshot()
@@ -1275,7 +1276,7 @@ export const useConfigurator = defineStore('configurator', {
       const A: XY = { x: 0, y: 0 }
       const B: XY = { x: base, y: 0 }
       const C = apexFrom(A, B, fromA, fromB, -1) // вершина «вверх» на экране
-      if (!C) return 'Не удалось построить треугольник'
+      if (!C) return t('measure.errNoTriangle')
       const ox = this._bounds().right + 800
       const oy = -Math.min(0, C.y)
       const mk = (p: XY): Point => ({ id: newId(), x: Math.round(p.x + ox), y: Math.round(p.y + oy) })
@@ -1302,26 +1303,26 @@ export const useConfigurator = defineStore('configurator', {
      */
     _solveAttach(baseKey: string, fromA: number, fromB: number) {
       const shape = this._shapeOfEdge(baseKey)
-      if (!shape) return { err: 'Пристраивать можно только к внешним сторонам контура' }
-      if (!shape.triangles.length) return { err: 'Фигура не разбита на треугольники' }
+      if (!shape) return { err: t('measure.errOuterOnly') }
+      if (!shape.triangles.length) return { err: t('measure.errNotSplit') }
       if (holesOf(shape, this.shapes as Shape[]).length) {
-        return { err: 'В полотне есть вырез: пользуйтесь кнопкой «Разбить фигуру на треугольники»' }
+        return { err: t('measure.errHasHole') }
       }
       const e = shapeEdges(shape).find((x) => x.key === baseKey)
-      if (!e) return { err: 'Эта сторона уже внутри фигуры — пристраивать можно только к внешним' }
+      if (!e) return { err: t('measure.errInside') }
       const err = triangleError(e.length, fromA, fromB)
       if (err) return { err }
       const host = shape.triangles.find((t) =>
         ([[t.a, t.b], [t.b, t.c], [t.c, t.a]] as [string, string][]).some(([u, v]) => edgeKey(u, v) === baseKey))
-      if (!host) return { err: 'Эта сторона не принадлежит ни одному треугольнику' }
+      if (!host) return { err: t('measure.errNoHost') }
       const byId = pointIndex(shape)
       const thirdId = [host.a, host.b, host.c].find((id) => id !== e.a.id && id !== e.b.id)
       const third = thirdId ? byId.get(thirdId) : undefined
-      if (!third) return { err: 'Повреждена разбивка на треугольники' }
+      if (!third) return { err: t('measure.errBrokenMesh') }
       // новую вершину ставим с противоположной стороны от соседнего треугольника
       const side: 1 | -1 = cross3(e.a, e.b, third) > 0 ? -1 : 1
       const apex = apexFrom(e.a, e.b, fromA, fromB, side)
-      if (!apex) return { err: 'Засечки не пересекаются — проверьте размеры' }
+      if (!apex) return { err: t('measure.errNoCross') }
       // если вершина легла на уже существующую — привариваем к ней (замыкание контура)
       let weldId: string | undefined
       let best = WELD_TOL
@@ -1332,15 +1333,15 @@ export const useConfigurator = defineStore('configurator', {
       }
       const C: XY = weldId ? byId.get(weldId)! : apex
       const tri: XY[] = [e.a, e.b, C]
-      for (const t of shape.triangles) {
-        const A = byId.get(t.a); const B = byId.get(t.b); const D = byId.get(t.c)
+      for (const other of shape.triangles) {
+        const A = byId.get(other.a); const B = byId.get(other.b); const D = byId.get(other.c)
         if (A && B && D && trianglesOverlap(tri, [A, B, D])) {
-          return { err: 'Треугольник накладывается на уже построенные — проверьте размеры или сторону' }
+          return { err: t('measure.errOverlap') }
         }
       }
       for (const p of shapePoints(shape)) {
         if (p.id === e.a.id || p.id === e.b.id || p.id === weldId) continue
-        if (pointInTri(p, tri[0], tri[1], tri[2])) return { err: 'Внутрь треугольника попадает вершина контура' }
+        if (pointInTri(p, tri[0], tri[1], tri[2])) return { err: t('measure.errVertexInside') }
       }
       return { shape, e, apex: C, weldId }
     },
@@ -1361,7 +1362,7 @@ export const useConfigurator = defineStore('configurator', {
       const angle = Math.min(apex, 180 - apex)
       const level = quality(angle)
       const factor = errorFactor(angle)
-      const weldMsg = r.weldId ? 'Вершина совпала с существующей — контур замкнётся. ' : ''
+      const weldMsg = r.weldId ? t('measure.weld') : ''
       this.triPreview = {
         a: { x: r.e!.a.x, y: r.e!.a.y },
         b: { x: r.e!.b.x, y: r.e!.b.y },
@@ -1369,9 +1370,8 @@ export const useConfigurator = defineStore('configurator', {
         ok: true,
         level,
         msg: level === 'good'
-          ? weldMsg + `Засечка ${Math.round(angle)}° — надёжно`
-          : weldMsg + `Засечка всего ${Math.round(angle)}°: ошибка рулетки бьёт по вершине ×${factor.toFixed(1)}. `
-            + 'Лучше взять другое основание.',
+          ? weldMsg + t('measure.good', { deg: Math.round(angle) })
+          : weldMsg + t('measure.poor', { deg: Math.round(angle), factor: factor.toFixed(1) }),
       }
       return null
     },
@@ -1399,7 +1399,7 @@ export const useConfigurator = defineStore('configurator', {
         shape.innerPoints = savedInner
         shape.triangles = savedTris
         this.past.pop()
-        return 'Треугольник разрывает контур — проверьте, к какой стороне пристраиваете'
+        return t('measure.errTears')
       }
       this.measureBaseKey = null
       this.triPreview = null
@@ -1433,7 +1433,7 @@ export const useConfigurator = defineStore('configurator', {
     /** Разбивает уже нарисованную фигуру на непересекающиеся треугольники. */
     triangulateActive(): string | null {
       const s = this._active()
-      if (!s.closed || s.points.length < 3) return 'Разбить можно только замкнутую фигуру'
+      if (!s.closed || s.points.length < 3) return t('measure.errClosedOnly')
 
       // вырез вшиваем в контур мостом: иначе треугольники пройдут сквозь дыру,
       // а замерщику нужно, чтобы они упирались в её углы
@@ -1442,10 +1442,10 @@ export const useConfigurator = defineStore('configurator', {
         s.points.map((p) => ({ id: p.id, x: p.x, y: p.y })),
         holes.map((h) => h.points.map((p) => ({ id: p.id, x: p.x, y: p.y }))),
       )
-      if (!ring) return 'Не удалось обойти вырез — проверьте, что он целиком внутри полотна'
+      if (!ring) return t('measure.errHoleWalk')
 
       const tri = earClip(ring)
-      if (!tri.length) return 'Контур самопересекающийся — разбить не удалось'
+      if (!tri.length) return t('measure.errSelfCross')
       this.snapshot()
       const byId = new Map(ring.map((p) => [p.id, p]))
       s.measureDirty = false
@@ -1481,7 +1481,7 @@ export const useConfigurator = defineStore('configurator', {
 
     serialize(): string {
       const model: SerializedModel = {
-        version: 2,
+        version: 3,
         shapes: JSON.parse(JSON.stringify(this.shapes)),
         activeShapeId: this.activeShapeId,
         settings: { ...this.settings },
@@ -1500,6 +1500,8 @@ export const useConfigurator = defineStore('configurator', {
           if (!(s.level >= 1)) s.level = 1
           if (!(s.drop >= 0)) s.drop = 0
           s.colorHex = normalizeHex(s.colorHex ?? '') ?? DEFAULT_COLOR.hex
+          // до v3 плёнка хранилась русским названием — переносим на идентификатор
+          if (LEGACY_FILMS[s.film]) s.film = LEGACY_FILMS[s.film]
           if (!FILMS.includes(s.film)) s.film = DEFAULT_FILM
           for (const k of Object.keys(s.edgeProps ?? {})) {
             s.edgeProps[k] = { ...DEFAULT_EDGE, ...s.edgeProps[k] }

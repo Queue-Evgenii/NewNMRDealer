@@ -8,7 +8,10 @@
  * одинаково мышью и пальцем — на указателях, без отдельной ветки для touch.
  */
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { hexToHsv, hsvToHex, normalizeHex, type Hsv } from '../ceilingColors'
+
+const { t } = useI18n()
 
 const props = defineProps<{ modelValue: string }>()
 const emit = defineEmits<{ (e: 'update:modelValue', hex: string): void }>()
@@ -80,11 +83,11 @@ function applyHex(v: string) {
 <template>
   <div class="picker">
     <div class="area" :style="{ '--hue': hueColor }" tabindex="0"
-      role="slider" aria-label="Насыщенность и яркость"
+      role="slider" :aria-label="t('color.saturation')"
       @pointerdown.prevent="onArea" @keydown="bump($event, 'area')">
       <span class="knob" :style="{ ...dot, background: modelValue }"></span>
     </div>
-    <div class="hue" tabindex="0" role="slider" aria-label="Оттенок"
+    <div class="hue" tabindex="0" role="slider" :aria-label="t('color.hue')"
       @pointerdown.prevent="onHue" @keydown="bump($event, 'hue')">
       <span class="knob" :style="{ ...hueDot, background: hueColor }"></span>
     </div>

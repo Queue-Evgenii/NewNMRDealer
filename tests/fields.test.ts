@@ -24,12 +24,12 @@ function field(w: ReturnType<typeof panel>, label: string) {
 
 describe('подписи углов', () => {
   it('идут буквами и уступают имени из мастера', () => {
-    expect(cornerLabel(0)).toBe('А')
-    expect(cornerLabel(1)).toBe('Б')
-    expect(cornerLabel(27)).toBe('Я') // последняя буква набора
-    expect(cornerLabel(28)).toBe('А2') // дальше — с номером
+    expect(cornerLabel(0)).toBe('A')
+    expect(cornerLabel(1)).toBe('B')
+    expect(cornerLabel(22)).toBe('Z') // последняя буква набора
+    expect(cornerLabel(23)).toBe('A2') // дальше — с номером
     expect(cornerLabel(1, 'у окна')).toBe('у окна')
-    expect(sideLabel(0, 1)).toBe('АБ')
+    expect(sideLabel(0, 1)).toBe('AB')
   })
 })
 
@@ -38,9 +38,9 @@ describe('правка числами', () => {
     const w = panel()
     const rows = w.findAll('.sides li')
     expect(rows).toHaveLength(4)
-    expect(rows.map((r) => r.find('.pick').text())).toEqual(['АБ', 'БВ', 'ВГ', 'ГА'])
+    expect(rows.map((r) => r.find('.pick').text())).toEqual(['AB', 'BC', 'CD', 'DA'])
 
-    // ввод длины в строке «АБ» двигает именно эту сторону
+    // ввод длины в строке «AB» двигает именно эту сторону
     await rows[0].find('input').setValue('2500')
     await rows[0].find('input').trigger('change')
     const top = store.activeEdges[0]
@@ -49,7 +49,7 @@ describe('правка числами', () => {
     // строка выбирает сторону — на чертеже она подсвечивается
     await rows[2].find('.pick').trigger('click')
     expect(store.selectedEdgeKey).toBe(store.activeEdges[2].key)
-    expect(w.text()).toContain('Сторона ВГ')
+    expect(w.text()).toContain('Сторона CD')
   })
   it('прогиб дуги задаётся полем', async () => {
     const top = store.activeEdges.find((e) => e.a.y === 0 && e.b.y === 0)!
@@ -63,11 +63,11 @@ describe('правка числами', () => {
   })
 
   it('угол назван буквой, показывает раствор и двигается координатами', async () => {
-    const corner = store.activeShape.points[1] // «Б»
+    const corner = store.activeShape.points[1] // «B»
     store.selectPoint(corner.id)
 
     const w = panel()
-    expect(w.text()).toContain('Угол Б')
+    expect(w.text()).toContain('Угол B')
     expect(w.text()).toContain('90°')
 
     await field(w, 'X, мм').setValue('4500')

@@ -4,6 +4,8 @@
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import type { Tool } from '../stores/configurator'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { IconSelect, IconDraw, IconRuler, IconMeasure } from '../icons'
 
 defineProps<{ compact?: boolean }>()
@@ -11,12 +13,14 @@ defineProps<{ compact?: boolean }>()
 const store = useConfigurator()
 const { tool } = storeToRefs(store)
 
-const modes = [
-  { id: 'select' as Tool, icon: IconSelect, label: 'Выбор', hint: 'Выделять и двигать (V)' },
-  { id: 'draw' as Tool, icon: IconDraw, label: 'Рисовать', hint: 'Новый контур по точкам (D)' },
-  { id: 'ruler' as Tool, icon: IconRuler, label: 'Линейка', hint: 'Померить расстояние (R)' },
-  { id: 'measure' as Tool, icon: IconMeasure, label: 'Замер', hint: 'Метод треугольников (T)' },
-]
+const { t } = useI18n()
+
+const modes = computed(() => [
+  { id: 'select' as Tool, icon: IconSelect, label: t('mode.select'), hint: t('mode.selectHint') },
+  { id: 'draw' as Tool, icon: IconDraw, label: t('mode.draw'), hint: t('mode.drawHint') },
+  { id: 'ruler' as Tool, icon: IconRuler, label: t('mode.ruler'), hint: t('mode.rulerHint') },
+  { id: 'measure' as Tool, icon: IconMeasure, label: t('mode.measure'), hint: t('mode.measureHint') },
+])
 </script>
 
 <template>

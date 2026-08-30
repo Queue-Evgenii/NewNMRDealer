@@ -1,6 +1,7 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import type { SerializedModel } from '../types'
 import { newId } from '../composables/useGeometry'
+import { t } from '../i18n'
 import { setStorageKey, useConfigurator } from './configurator'
 
 /**
@@ -79,7 +80,7 @@ export const useProjects = defineStore('projects', {
         const legacy = (() => {
           try { return localStorage.getItem(LEGACY_KEY) } catch { return null }
         })()
-        const meta = this._newMeta(legacy ? 'Мой чертёж' : 'Проект 1')
+        const meta = this._newMeta(legacy ? t('projects.myDrawing') : t('projects.defaultName', { n: 1 }))
         if (legacy) {
           try { localStorage.setItem(projectKey(meta.id), legacy) } catch { /* ignore */ }
         }
@@ -164,7 +165,7 @@ export const useProjects = defineStore('projects', {
       const src = this.list.find((p) => p.id === id)
       if (!src) return
       if (id === this.currentId) useConfigurator().persist()
-      const meta = this._newMeta(`${src.name} — копия`)
+      const meta = this._newMeta(t('projects.copySuffix', { name: src.name }))
       meta.areaM2 = src.areaM2
       meta.client = src.client
       try {
@@ -184,7 +185,7 @@ export const useProjects = defineStore('projects', {
 
       if (!this.list.length) {
         // последний проект удалять некуда — заводим чистый
-        const meta = this._newMeta('Проект 1')
+        const meta = this._newMeta(t('projects.defaultName', { n: 1 }))
         this.list = [meta]
         this.currentId = meta.id
         setStorageKey(projectKey(meta.id))
@@ -237,16 +238,16 @@ export const useProjects = defineStore('projects', {
     },
     _sharedName(): string {
       const taken = new Set(this.list.map((p) => p.name))
-      if (!taken.has('Из ссылки')) return 'Из ссылки'
+      if (!taken.has(t('projects.fromLink'))) return t('projects.fromLink')
       let n = 2
-      while (taken.has(`Из ссылки ${n}`)) n += 1
-      return `Из ссылки ${n}`
+      while (taken.has(t('projects.fromLinkN', { n }))) n += 1
+      return t('projects.fromLinkN', { n })
     },
     _nextName(): string {
       let n = this.list.length + 1
       const taken = new Set(this.list.map((p) => p.name))
-      while (taken.has(`Проект ${n}`)) n += 1
-      return `Проект ${n}`
+      while (taken.has(t('projects.defaultName', { n }))) n += 1
+      return t('projects.defaultName', { n })
     },
     _saveList() {
       try {

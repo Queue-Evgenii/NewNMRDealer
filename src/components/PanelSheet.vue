@@ -5,8 +5,10 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigurator } from '../stores/configurator'
 import { IconChevronUp, IconChevronDown } from '../icons'
+import { useI18n } from 'vue-i18n'
 import { CURRENCY } from '../pricing'
 
+const { t } = useI18n()
 const store = useConfigurator()
 const { totals } = storeToRefs(store)
 
@@ -21,9 +23,9 @@ const price = computed(() => totals.value.price.toFixed(0))
     <button class="head" @click="open = !open">
       <span class="bar"></span>
       <span class="peek">
-        <span>S <b>{{ areaM2 }}</b> м²</span>
-        <span>P <b>{{ perimM }}</b> м</span>
-        <span>Цена <b>{{ price }}</b> {{ CURRENCY }}</span>
+        <span>S <b>{{ areaM2 }}</b> {{ t('common.m2') }}</span>
+        <span>P <b>{{ perimM }}</b> {{ t('common.m') }}</span>
+        <span>{{ t('panel.price') }} <b>{{ price }}</b> {{ CURRENCY }}</span>
       </span>
       <span class="chev">
         <component :is="open ? IconChevronDown : IconChevronUp" :size="16" :stroke-width="1.75" />
